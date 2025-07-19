@@ -14,9 +14,11 @@ export const updateProfile = async (req: Request, res: Response) => {
                 fullName: user.fullName,
                 username: user.username,
                 email: user.email,
-                mobileNo: user.mobileNo,
                 gender: user.gender,
                 profilePic: user.profilePic,
+                nationality: user.nationality,
+                elo: user.elo,
+                gameStats: user.gameStats,
                 token: req.headers.authorization?.split(" ")[1]
             });
         } else {

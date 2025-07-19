@@ -3,8 +3,8 @@ export interface SignupParams {
     username: string;
     email: string;
     password: string;
-    mobileNo: string;
     gender: string;
+    nationality: string;
 }
 
 export interface LoginParams {
@@ -17,9 +17,9 @@ export interface AuthUser {
     fullName: string;
     username: string;
     email: string;
-    mobileNo: string;
     gender: "M" | "F" | "O";
     profilePic?: string | null;
+    nationality: string;
 }
 
 export interface AuthContextType {

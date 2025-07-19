@@ -19,7 +19,7 @@ const useLogin = () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("DB-token")}`
+                    Authorization: `Bearer ${localStorage.getItem("EP-token")}`
                 },
                 body: JSON.stringify({ email, password })
             });
@@ -33,9 +33,9 @@ const useLogin = () => {
             const now = new Date().getTime();
             const expiry = now + 30 * 24 * 60 * 60 * 1000; // 30 days
 
-            localStorage.setItem("DB-token", data.token);
-            localStorage.setItem("DB-user", JSON.stringify(data));
-            localStorage.setItem("DB-expiry", expiry.toString());
+            localStorage.setItem("EP-token", data.token);
+            localStorage.setItem("EP-user", JSON.stringify(data));
+            localStorage.setItem("EP-expiry", expiry.toString());
             setAuthUser(data);
 
             if (data) {

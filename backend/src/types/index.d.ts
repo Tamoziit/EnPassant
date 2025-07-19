@@ -10,13 +10,21 @@ export interface UserSignupBody {
     username: string;
     email: string;
     password: string;
-    mobileNo: string;
     gender: "M" | "F" | "O";
+    nationality: string;
 }
 
 export interface UserLoginBody {
     email: string;
     password: string;
+}
+
+export interface GameStats {
+    played: number;
+    won: number;
+    lost: number;
+    draw: number;
+    stalemate: number;
 }
 
 export interface User {
@@ -25,9 +33,11 @@ export interface User {
     username: string;
     email: string;
     password: string;
-    mobileNo: string;
     profilePic?: string | null;
     gender: "M" | "F" | "O";
+    nationality: string;
+    elo: number;
+    gameStats?: GameStats | null;
 }
 
 declare module "express" {

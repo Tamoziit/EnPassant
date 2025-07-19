@@ -9,7 +9,7 @@ const generateTokenAndSetCookie = (userId: Types.ObjectId, res: Response) => {
     });
 
     // Auth cookies
-    res.cookie("DB-jwt", token, {
+    res.cookie("EP-jwt", token, {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         httpOnly: true,
         sameSite: "strict",

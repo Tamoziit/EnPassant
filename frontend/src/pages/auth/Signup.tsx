@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { FaEye, FaEyeSlash, FaLock, FaPhoneAlt, FaRegUser, FaTransgenderAlt, FaUser } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaLock, FaRegUser, FaTransgenderAlt, FaUser } from "react-icons/fa";
 import useSignup from "../../hooks/useSignup";
 import Spinner from "../../components/Spinner";
 import { Link } from "react-router-dom";
 import { MdEmail } from "react-icons/md";
+import { BiWorld } from "react-icons/bi";
+import NationalityDropdown from "../../components/NationalityDropdown";
 
 const Signup = () => {
 	const [inputs, setInputs] = useState({
@@ -11,8 +13,8 @@ const Signup = () => {
 		username: "",
 		email: "",
 		password: "",
-		mobileNo: "",
-		gender: ""
+		gender: "",
+		nationality: ""
 	});
 	const { signup, loading } = useSignup();
 	const [showPassword, setShowPassword] = useState(false);
@@ -32,12 +34,12 @@ const Signup = () => {
 			<div className="h-[3.3px] -mt-1 bg-blue-400 w-10 rounded-lg" />
 
 			<div className="flex w-full items-center justify-center">
-				<div className="flex overflow-hidden">
+				<div className="flex">
 					<div className="hidden lg:flex items-center justify-center w-[450px] glassmorphic p-4 rounded-lg lg:!rounded-none lg:!rounded-l-lg">
 						<img src="/Logo.png" alt="signup" className="object-cover  h-[400px]" />
 					</div>
 
-					<form className="flex flex-col gap-4 items-start justify-center glassmorphic p-4 w-[320px] md:w-[380px] lg:w-[450px] rounded-lg lg:!rounded-none lg:!rounded-r-lg" onSubmit={handleSubmit}>
+					<form className="flex flex-col gap-4 items-start justify-center glassmorphic p-4 w-[360px] md:w-[400px] lg:w-[450px] rounded-lg lg:!rounded-none lg:!rounded-r-lg" onSubmit={handleSubmit}>
 						<div className="flex flex-col gap-1 w-full">
 							<label className="text-lg font-medium text-gray-300 flex items-center gap-1.5"><FaUser />Full Name</label>
 							<input
@@ -96,18 +98,6 @@ const Signup = () => {
 						</div>
 
 						<div className="flex flex-col gap-1 w-full">
-							<label className="text-lg font-medium text-gray-300 flex items-center gap-1.5"><FaPhoneAlt />Mobile Number</label>
-							<input
-								type="text"
-								placeholder="Enter your Mobile Number"
-								required
-								className="input-primary"
-								value={inputs.mobileNo}
-								onChange={(e) => setInputs({ ...inputs, mobileNo: e.target.value })}
-							/>
-						</div>
-
-						<div className="flex flex-col gap-1 w-full">
 							<label className="text-lg font-medium text-gray-300 flex items-center gap-1.5"><FaTransgenderAlt />Gender</label>
 							<div className="flex justify-around w-full text-gray-300">
 								<label className="flex items-center">
@@ -141,6 +131,14 @@ const Signup = () => {
 									OTHERS
 								</label>
 							</div>
+						</div>
+
+						<div className="flex flex-col gap-1 w-full">
+							<label className="text-lg font-medium text-gray-300 flex items-center gap-1.5"><BiWorld />Nationality</label>
+							<NationalityDropdown
+								value={inputs.nationality}
+								onChange={(value) => setInputs({ ...inputs, nationality: value })}
+							/>
 						</div>
 
 						<div className="flex items-start justify-center p-2 w-full">

@@ -13,16 +13,16 @@ const useSignup = () => {
         username,
         email,
         password,
-        mobileNo,
-        gender
+        gender,
+        nationality
     }: SignupParams) => {
         const success = handleInputErrors({
             fullName,
             username,
             email,
             password,
-            mobileNo,
-            gender
+            gender,
+            nationality
         });
         if (!success) return;
 
@@ -32,15 +32,15 @@ const useSignup = () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("DB-token")}`
+                    Authorization: `Bearer ${localStorage.getItem("EP-token")}`
                 },
                 body: JSON.stringify({
                     fullName,
                     username,
                     email,
                     password,
-                    mobileNo,
-                    gender
+                    gender,
+                    nationality
                 })
             });
             const data = await res.json();
@@ -53,9 +53,9 @@ const useSignup = () => {
             const now = new Date().getTime();
             const expiry = now + 30 * 24 * 60 * 60 * 1000; // 30 days
 
-            localStorage.setItem("DB-token", data.token);
-            localStorage.setItem("DB-user", JSON.stringify(data));
-            localStorage.setItem("DB-expiry", expiry.toString());
+            localStorage.setItem("EP-token", data.token);
+            localStorage.setItem("EP-user", JSON.stringify(data));
+            localStorage.setItem("EP-expiry", expiry.toString());
             setAuthUser(data);
 
             if (data) {
@@ -83,10 +83,10 @@ function handleInputErrors({
     username,
     email,
     password,
-    mobileNo,
-    gender
+    gender,
+    nationality
 }: SignupParams) {
-    if (!fullName || !username || !email || !password || !mobileNo || !gender) {
+    if (!fullName || !username || !email || !password || !nationality || !gender) {
         toast.error("Please fill all the fields");
         return false;
     }
@@ -98,11 +98,6 @@ function handleInputErrors({
 
     if (password.length < 6) {
         toast.error("Password should be atleast 6 characters long");
-        return false;
-    }
-
-    if(mobileNo.length !== 10) {
-        toast.error("Enter a valid Mobile No.");
         return false;
     }
 

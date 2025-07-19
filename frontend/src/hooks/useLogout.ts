@@ -14,7 +14,7 @@ const useLogout = () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("FGPT-token")}`
+                    Authorization: `Bearer ${localStorage.getItem("EP-token")}`
                 }
             });
             const data = await res.json();
@@ -23,9 +23,9 @@ const useLogout = () => {
                 throw new Error(data.error);
             }
 
-            localStorage.removeItem("DB-token");
-            localStorage.removeItem("DB-user");
-            localStorage.removeItem("DB-expiry");
+            localStorage.removeItem("EP-token");
+            localStorage.removeItem("EP-user");
+            localStorage.removeItem("EP-expiry");
             setAuthUser(null);
 
             if (data) {

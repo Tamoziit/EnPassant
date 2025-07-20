@@ -30,3 +30,12 @@ export interface AuthContextType {
 export interface AuthContextProviderProps {
     children: ReactNode;
 }
+
+export interface SocketContextType {
+    socket: Socket | null;
+    onlinePlayers: string[];
+}
+
+export interface SocketProviderProps {
+    children: ReactNode;
+}

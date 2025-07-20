@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 
+import { app, server } from './socket/socket';
 import connecToMongoDB from './db/connectToMongoDB';
 import client from './redis/client';
 import adminRoutes from './routes/admin.routes';
@@ -15,7 +16,6 @@ import profileRoutes from "./routes/profile.routes";
 
 const PORT = process.env.PORT || 3000;
 
-const app = express();
 const corsOpts = {
     origin: '*',
     methods: [
@@ -52,7 +52,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/profile', profileRoutes);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`🚀 Server is running on PORT: ${PORT}`);
     connecToMongoDB();
 

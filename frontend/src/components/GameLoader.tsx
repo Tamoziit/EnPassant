@@ -63,7 +63,7 @@ const Scene = () => {
 
 const GameLoader = () => {
 	return (
-		<div className="w-full h-[550px] lg:h-[800px] mx-auto relative bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl overflow-hidden shadow-2xl border border-blue-800/30">
+		<div className="w-full h-[500px] md:h-[620px] lg:h-[700px] mx-auto relative bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl overflow-hidden shadow-2xl border border-blue-800/30">
 			<Canvas
 				shadows
 				camera={{ position: [0, 2, 8], fov: 50 }}

@@ -88,10 +88,6 @@ const Profile = () => {
 							{authUser?.email}
 						</p>
 						<p className="text-gray-200">
-							<b className="text-blue-400">Mobile no.: </b>
-							{authUser?.mobileNo}
-						</p>
-						<p className="text-gray-200">
 							<b className="text-blue-400">Gender: </b>
 							{authUser?.gender === "M" ? "Male" : "Female"}
 						</p>

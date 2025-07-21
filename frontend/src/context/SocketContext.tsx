@@ -17,10 +17,11 @@ export const SocketContextProvider: React.FC<SocketProviderProps> = ({ children 
     const { authUser } = useAuthContext()
     const [socket, setSocket] = useState<Socket | null>(null);
     const [onlinePlayers, setOnlinePlayers] = useState<string[]>([]);
+    const socketUrl = import.meta.env.VITE_SOCKET_URL;
 
     useEffect(() => {
         if (authUser) {
-            const newSocket = io("http://localhost:5000", {
+            const newSocket = io(socketUrl, {
                 query: {
                     userId: authUser._id,
                 },

@@ -33,5 +33,6 @@
   },
   "include": [
     "src"
-  ]
+  ],
+  "types": ["three"]
 }

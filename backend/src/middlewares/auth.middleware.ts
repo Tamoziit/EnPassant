@@ -17,7 +17,7 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
 			return;
 		}
 
-		const redisKey = `DB-user:${decodedUser.userId}`;
+		const redisKey = `EP-user:${decodedUser.userId}`;
 		const payload = await client.get(redisKey);
 		if (!payload) {
 			res.status(401).json({ error: "Unauthorized - No User Data in Cache, Login first" });

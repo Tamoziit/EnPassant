@@ -2,6 +2,8 @@ import { Server } from "socket.io";
 import http from "http";
 import express from "express";
 import client from "../redis/client";
+import { cleanupStates, joinRoom } from "../controllers/game.controller";
+import User from "../models/user.model";
 
 const baseUrl = process.env.BASE_URL!;
 const app = express();
@@ -28,12 +30,27 @@ io.on("connection", async (socket) => {
     if (userId) {
         await client.hset("player_sockets", userId, socket.id);
         console.log(`User ${userId} connected with socket ID ${socket.id}`);
+        socket.join(userId);
     }
+
+    // Handle joining game room (matchmaking)
+    socket.on("joinRoom", (data) => {
+        console.log(`User ${data.userId} requesting to join game room`);
+        joinRoom({
+            userId: data.userId,
+            socket: socket
+        });
+    });
 
     socket.on("disconnect", async () => {
         if (userId) {
-            await client.hdel("player_sockets", userId);
             console.log(`User ${userId} disconnected`);
+            await client.hdel("player_sockets", userId);
+
+            const user = await User.findById(userId);
+            if (user) {
+                cleanupStates(user._id);
+            }
         }
     });
 });

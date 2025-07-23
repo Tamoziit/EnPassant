@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import { Request } from "express";
+import { Socket } from "socket.io";
 
 export interface AdminToken {
     password: string
@@ -44,4 +45,9 @@ declare module "express" {
     export interface Request {
         user?: User;
     }
+}
+
+export interface JoinRoomProps {
+    userId: Types.ObjectId;
+    socket: Socket;
 }

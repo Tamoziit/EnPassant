@@ -6,18 +6,23 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAuthContext } from "@/context/AuthContext";
 import useGetMyElo from "@/hooks/useGetMyElo";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ReactCountryFlag from "react-country-flag";
 import { IoMdTime } from "react-icons/io";
 import { AiFillThunderbolt } from "react-icons/ai";
 import { GiSilverBullet } from "react-icons/gi";
 import { Button } from "@/components/ui/button";
+import { useSocketContext } from "@/context/SocketContext";
+import { useNavigate } from "react-router-dom";
 
 const GameRoom = () => {
 	const { authUser } = useAuthContext();
 	const [profilePic, setProfilePic] = useState(authUser?.profilePic || "");
 	const [elo, setElo] = useState("");
 	const { loading, getMyElo } = useGetMyElo();
+	const { socket } = useSocketContext();
+	const [searching, setSearching] = useState(false);
+	const navigate = useNavigate();
 
 	const getProfilePic = () => {
 		if (!authUser?.profilePic) {
@@ -40,6 +45,69 @@ const GameRoom = () => {
 			fetchElo();
 		}
 	}, [authUser]);
+
+	// Memoize the callback to prevent unnecessary re-renders
+	const handleMatchFound = useCallback((gameRoom: string) => {
+		setSearching(false);
+		navigate(`/game/${gameRoom}`);
+	}, [navigate]);
+
+	const handleSearchError = useCallback((error: string) => {
+		console.error("Search error:", error);
+		setSearching(false);
+		// You might want to show an error toast here
+	}, []);
+
+	const handleNoMatch = useCallback((message: string) => {
+		console.log("No match found:", message);
+		setSearching(false);
+		// You might want to show a message to the user
+	}, []);
+
+	useEffect(() => {
+		if (!socket) return;
+
+		console.log("Setting up socket listeners");
+
+		// Clean up any existing listeners to prevent duplicates
+		socket.off("matchFound");
+		socket.off("error");
+		socket.off("noMatchFound");
+
+		// Add event listeners
+		socket.on("matchFound", handleMatchFound);
+		socket.on("error", handleSearchError);
+		socket.on("noMatchFound", handleNoMatch);
+
+		return () => {
+			// Clean up listeners on unmount
+			socket.off("matchFound", handleMatchFound);
+			socket.off("error", handleSearchError);
+			socket.off("noMatchFound", handleNoMatch);
+		};
+	}, [socket, handleMatchFound, handleSearchError, handleNoMatch]);
+
+	const handleStartGame = () => {
+		if (!authUser || searching) return;
+
+		console.log("Starting game search for user:", authUser._id);
+		setSearching(true);
+
+		socket.emit("joinRoom", {
+			userId: authUser._id,
+		});
+	};
+
+	const handleCancelSearch = () => {
+		if (!searching) return;
+
+		console.log("Cancelling search");
+		setSearching(false);
+
+		socket.emit("cancelSearch", {
+			userId: authUser?._id,
+		});
+	};
 
 	return (
 		<>
@@ -108,13 +176,38 @@ const GameRoom = () => {
 									<span>10 mins</span>
 								</div>
 
-								<Button
-									variant="default"
-									size="md"
-									className="w-full text-lg md:text-xl md:font-semibold ring-2 ring-blue-300 cursor-pointer"
-								>
-									Start a New Game
-								</Button>
+								{!searching ? (
+									<Button
+										variant="default"
+										size="md"
+										className="w-full text-lg md:text-xl md:font-semibold ring-2 ring-blue-300 cursor-pointer"
+										onClick={handleStartGame}
+									>
+										Start a New Game
+									</Button>
+								) : (
+									<div className="flex flex-col gap-2">
+										<Button
+											variant="default"
+											size="md"
+											className="w-full text-lg md:text-xl md:font-semibold ring-2 ring-blue-300 cursor-pointer"
+											disabled
+										>
+											<div className="flex gap-2 items-center justify-center">
+												<Spinner size="small" color="accent" />
+												<span className="ml-2">Searching for opponent...</span>
+											</div>
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											className="w-full text-sm"
+											onClick={handleCancelSearch}
+										>
+											Cancel Search
+										</Button>
+									</div>
+								)}
 							</div>
 						</>
 					) : (

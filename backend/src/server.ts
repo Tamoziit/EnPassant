@@ -13,6 +13,7 @@ import client from './redis/client';
 import adminRoutes from './routes/admin.routes';
 import authRoutes from './routes/auth.routes';
 import profileRoutes from "./routes/profile.routes";
+import gameRoutes from "./routes/game.routes";
 
 const PORT = process.env.PORT || 3000;
 
@@ -51,6 +52,7 @@ app.get('/api/v1', (req: Request, res: Response) => {
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/profile', profileRoutes);
+app.use('/api/v1/game', gameRoutes);
 
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on PORT: ${PORT}`);

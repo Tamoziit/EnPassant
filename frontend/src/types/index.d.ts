@@ -39,3 +39,21 @@ export interface SocketContextType {
 export interface SocketProviderProps {
     children: ReactNode;
 }
+
+export interface PlayerData {
+    userId: string;
+    username: string;
+    elo: number;
+    nationality: string;
+    color: "w" | "b";
+    profilePic?: string | null;
+    gender: "M" | "F";
+}
+
+export interface RoomData {
+    roomId: string;
+    player1: PlayerData;
+    player2: PlayerData;
+    moves: string[];
+    status: string;
+}

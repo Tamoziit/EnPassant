@@ -3,6 +3,7 @@ import User from "../models/user.model";
 import client from "../redis/client";
 import { io } from "../socket/socket";
 import { JoinRoomProps } from "../types";
+import { Request, Response } from "express";
 
 const MAX_ELO_DIFF = 100;
 const MAX_WAIT_TIME_MS = 30000;
@@ -26,6 +27,8 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 			username: user.username,
 			elo: user.elo,
 			nationality: user.nationality,
+			profilePic: user.profilePic,
+			gender: user.gender
 		};
 
 		const userKey = JSON.stringify(userObj);
@@ -174,6 +177,23 @@ const cancelSearch = (userId: Types.ObjectId): void => {
 	}
 };
 
+export const getRoomData = async (req: Request, res: Response) => {
+	try {
+		const roomId = req.params.roomId;
+		const data = await client.get(`ROOM:${roomId}`);
+
+		if (data) {
+			const room = JSON.parse(data);
+			res.status(200).json(room);
+		} else {
+			res.status(400).json({ error: "Cannot find Room data" });
+		}
+	} catch (error) {
+		console.log("Error in getRoomData controller", error);
+		res.status(500).json({ error: "Internal Server Error" });
+	}
+}
+
 export const cleanupStates = async (userId: Types.ObjectId): Promise<void> => {
 	try {
 		cancelSearch(userId);
@@ -185,6 +205,8 @@ export const cleanupStates = async (userId: Types.ObjectId): Promise<void> => {
 				username: user.username,
 				elo: user.elo,
 				nationality: user.nationality,
+				profilePic: user.profilePic,
+				gender: user.gender
 			};
 			const userKey = JSON.stringify(userObj);
 			await client.zrem("REDIS_MATCH_SET", userKey);

@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import User from "../models/user.model";
 import client from "../redis/client";
 import { io } from "../socket/socket";
-import { JoinRoomProps } from "../types";
+import { HandleMoveProps, JoinRoomProps } from "../types";
 import { Request, Response } from "express";
 
 const MAX_ELO_DIFF = 100;
@@ -157,8 +157,8 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 		});
 
 		tryFindMatch();
-	} catch (err) {
-		console.error("Error in joinRoom:", err);
+	} catch (error) {
+		console.error("Error in joinRoom:", error);
 		cancelSearch(userId);
 		socket.emit("error", "Server error while joining room.");
 	}
@@ -191,6 +191,31 @@ export const getRoomData = async (req: Request, res: Response) => {
 	} catch (error) {
 		console.log("Error in getRoomData controller", error);
 		res.status(500).json({ error: "Internal Server Error" });
+	}
+}
+
+export const handleMove = async ({ roomId, userId, fen, socket }: HandleMoveProps) => {
+	try {
+		const data = await client.get(`ROOM:${roomId}`);
+
+		if (data) {
+			const room = JSON.parse(data);
+			const opponent = room.player1.userId === userId ? room.player2.userId : room.player1.userId;
+
+			const opponentSocketId = await client.hget("player_sockets", opponent);
+
+			if (!opponentSocketId) {
+				// TODO: Set game state to the other player won
+				return;
+			}
+
+			io.to(opponentSocketId).emit("handleMove", fen);
+		} else {
+			socket.emit("error", "Cannot find Room data");
+		}
+	} catch (error) {
+		console.error("Error in joinRoom:", error);
+		socket.emit("error", "Server error while handling move.");
 	}
 }
 

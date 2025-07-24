@@ -8,12 +8,14 @@ import GameLoader from "../GameLoader";
 import PlayerCard from "../PlayerCard";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
+import { useSocketContext } from "@/context/SocketContext";
 
 const ChessBoard = () => {
 	const { roomId } = useParams();
 	const [roomData, setRoomData] = useState<RoomData | null>(null);
 	const { authUser } = useAuthContext();
 	const { loading, getRoomData } = useGetRoomData();
+	const { socket } = useSocketContext();
 
 	const chessRef = useRef(new Chess());
 	const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
@@ -41,7 +43,17 @@ const ChessBoard = () => {
 
 			if (move === null) return false;
 
-			setFen(chessRef.current.fen());
+			const updatedFen = chessRef.current.fen();
+			setFen(updatedFen);
+
+			if (roomId && authUser) {
+				socket.emit("handleMove", {
+					roomId,
+					userId: authUser._id,
+					fen: updatedFen,
+				});
+			}
+
 			return true;
 		} catch {
 			return false;
@@ -51,6 +63,25 @@ const ChessBoard = () => {
 	useEffect(() => {
 		fetchRoomData();
 	}, [roomId]);
+
+	useEffect(() => {
+		if (!roomId || !authUser) return;
+
+		// Listen for opponent's move
+		socket.on("handleMove", (opponentFen: string) => {
+			try {
+				chessRef.current.load(opponentFen);
+				setFen(opponentFen);
+			} catch (err) {
+				console.error("Invalid FEN received:", opponentFen);
+			}
+		});
+
+		// Clean up listener on unmount
+		return () => {
+			socket.off("handleMove");
+		};
+	}, [roomId, authUser]);
 
 	console.log(roomData);
 	console.log(fen);

@@ -51,3 +51,10 @@ export interface JoinRoomProps {
     userId: Types.ObjectId;
     socket: Socket;
 }
+
+export interface HandleMoveProps {
+    roomId: string;
+    userId: string;
+    fen: string;
+    socket: Socket;
+}

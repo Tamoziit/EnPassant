@@ -5,6 +5,7 @@ import { io } from "../socket/socket";
 import { HandleMoveProps, JoinRoomProps, RoomData } from "../types";
 import { Request, Response } from "express";
 import generateRoomId from "../utils/generateRoomId";
+import chess from "../services/chessEngine";
 
 const MAX_ELO_DIFF = 100;
 const MAX_WAIT_TIME_MS = 30000;
@@ -211,6 +212,9 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 
 			room.fen = fen;
 			room.moves.push(move);
+			chess.load(fen);
+			const isCheck = chess.inCheck();
+
 			await client.set(`ROOM:${roomId}`, JSON.stringify(room));
 			const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
 
@@ -222,7 +226,8 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 
 			io.to(opponentSocketId).emit("handleMove", {
 				opponentFen: fen,
-				moves: room.moves
+				moves: room.moves,
+				isCheck
 			});
 		} else {
 			socket.emit("roomNotFound", "Cannot find Room data");

@@ -20,7 +20,7 @@ const MoveHistory = ({ moves }: MoveHistoryProps) => {
 
 							return (
 								<li key={i} className="text-sm font-medium text-gray-300/90 flex gap-4">
-									<span className="w-6 text-gray-400/70">{moveNumber}.</span>
+									<span className="w-2 text-gray-400/70">{moveNumber}.</span>
 									<span className="w-12">{whiteMove}</span>
 									<span className="w-12">{blackMove}</span>
 								</li>

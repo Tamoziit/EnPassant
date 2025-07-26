@@ -56,16 +56,27 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 	useEffect(() => {
 		if (!roomData || !authUser || !socket) return;
 
-		const handleOpponentMove = ({ opponentFen, moves }: MoveProps) => {
+		const handleOpponentMove = ({ opponentFen, moves, isCheck }: MoveProps) => {
 			try {
 				chessRef.current.load(opponentFen);
 				setFen(opponentFen);
 				setMoves(moves);
+
+				if (isCheck) {
+					toast("CHECK!!", {
+						icon: "⚠️",
+						style: {
+							background: "#FEF3C7",
+							color: "#92400E",
+							border: "1px solid #FACC15",
+						},
+					});
+				}
 			} catch (err) {
 				console.error("Invalid FEN received:", opponentFen);
 			}
 		};
-
+		
 		socket.on("handleMove", handleOpponentMove);
 
 		// Cleaning up listener on unmount
@@ -136,6 +147,9 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 						boardOrientation: me.color === "w" ? "white" : "black",
 						darkSquareStyle: { backgroundColor: "#1E3A8A" },
 						lightSquareStyle: { backgroundColor: "#BFDBFE" },
+						dropSquareStyle: {
+							backgroundColor: "#FDE68A"
+						},
 						animationDurationInMs: 200
 					}}
 				/>

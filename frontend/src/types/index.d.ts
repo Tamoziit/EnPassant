@@ -62,6 +62,7 @@ export interface RoomData {
 export interface MoveProps {
     opponentFen: string;
     moves: string[];
+    isCheck: boolean;
 }
 
 export interface ChessBoardProps {

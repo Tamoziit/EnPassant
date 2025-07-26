@@ -125,7 +125,7 @@ const GameRoom = () => {
 								<Avatar>
 									<AvatarImage src={profilePic} />
 									<AvatarFallback>
-										{authUser?.fullName?.substring(0, 2).toUpperCase()}
+										{authUser?.username?.substring(0, 2).toUpperCase()}
 									</AvatarFallback>
 								</Avatar>
 

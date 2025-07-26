@@ -47,6 +47,25 @@ declare module "express" {
     }
 }
 
+export interface PlayerData {
+    userId: string;
+    username: string;
+    elo: number;
+    nationality: string;
+    color: "w" | "b";
+    profilePic?: string | null;
+    gender: "M" | "F";
+}
+
+export interface RoomData {
+    roomId: string;
+    player1: PlayerData;
+    player2: PlayerData;
+    fen: string;
+    moves: string[];
+    status: string;
+}
+
 export interface JoinRoomProps {
     userId: Types.ObjectId;
     socket: Socket;

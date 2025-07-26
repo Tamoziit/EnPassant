@@ -54,6 +54,7 @@ export interface RoomData {
     roomId: string;
     player1: PlayerData;
     player2: PlayerData;
+    fen: string;
     moves: string[];
     status: string;
 }

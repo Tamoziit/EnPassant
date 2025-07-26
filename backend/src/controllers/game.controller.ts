@@ -2,8 +2,9 @@ import { Types } from "mongoose";
 import User from "../models/user.model";
 import client from "../redis/client";
 import { io } from "../socket/socket";
-import { HandleMoveProps, JoinRoomProps } from "../types";
+import { HandleMoveProps, JoinRoomProps, RoomData } from "../types";
 import { Request, Response } from "express";
+import generateRoomId from "../utils/generateRoomId";
 
 const MAX_ELO_DIFF = 100;
 const MAX_WAIT_TIME_MS = 30000;
@@ -93,31 +94,29 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 					cancelSearch(candidate.userId);
 					await client.zrem("REDIS_MATCH_SET", userKey, candidateStr);
 
-					const assignWhite = Math.random() < 0.5;
+					const userIsPlayer1 = Math.random() < 0.5;
 					const player1 = {
-						...userObj,
-						color: assignWhite ? "w" : "b"
+						...(userIsPlayer1 ? userObj : candidate),
+						color: "w"
 					};
 					const player2 = {
-						...candidate,
-						color: assignWhite ? "b" : "w"
+						...(userIsPlayer1 ? candidate : userObj),
+						color: "b"
 					};
-
-					// Deterministic Game Room ID (sorted userIds)
-					const sortedIds = [player1.userId, player2.userId].sort();
-					const roomId = `GM-${sortedIds[0]}:${sortedIds[1]}`;
+					const roomId = `GM-${generateRoomId()}`;
 
 					const gameRoom = {
 						roomId,
 						player1,
 						player2,
+						fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
 						moves: [],
 						status: "ongoing"
-					};
+					} as RoomData;
 
 					// Persisting room in Redis
 					await client.set(`ROOM:${roomId}`, JSON.stringify(gameRoom));
-					await client.expire(`ROOM:${roomId}`, 7200);
+					await client.expire(`ROOM:${roomId}`, 86400); // 24 hrs
 
 					console.log(`Match found! Room: ${roomId}`);
 					console.log(`Player1: ${player1.username} (${player1.color})`);
@@ -200,24 +199,35 @@ export const handleMove = async ({ roomId, userId, fen, socket }: HandleMoveProp
 
 		if (data) {
 			const room = JSON.parse(data);
-			const opponent = room.player1.userId === userId ? room.player2.userId : room.player1.userId;
 
-			const opponentSocketId = await client.hget("player_sockets", opponent);
+			const currentPlayer = room.player1.userId === userId ? room.player1 : room.player2;
+			const opponentPlayer = room.player1.userId === userId ? room.player2 : room.player1;
+
+			const currentTurn = room.fen.split(" ")[1]; // FEN format: [FEN] [turn] ...
+			if (currentTurn !== currentPlayer.color) {
+				socket.emit("notYourTurn", "Not your turn.");
+				return;
+			}
+
+			room.fen = fen;
+			await client.set(`ROOM:${roomId}`, JSON.stringify(room));
+			const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
 
 			if (!opponentSocketId) {
 				// TODO: Set game state to the other player won
+				socket.emit("win", "Opponent Disconnect, You win by Abandonment");
 				return;
 			}
 
 			io.to(opponentSocketId).emit("handleMove", fen);
 		} else {
-			socket.emit("error", "Cannot find Room data");
+			socket.emit("roomNotFound", "Cannot find Room data");
 		}
 	} catch (error) {
-		console.error("Error in joinRoom:", error);
+		console.error("Error in handleMove:", error);
 		socket.emit("error", "Server error while handling move.");
 	}
-}
+};
 
 export const cleanupStates = async (userId: Types.ObjectId): Promise<void> => {
 	try {

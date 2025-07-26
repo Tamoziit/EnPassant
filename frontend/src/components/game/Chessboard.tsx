@@ -1,43 +1,24 @@
-import { useAuthContext } from "@/context/AuthContext";
-import useGetRoomData from "@/hooks/useGetRoomData";
-import type { RoomData } from "@/types";
+import type { ChessBoardProps, MoveProps } from "@/types";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useParams } from "react-router-dom"
-import GameLoader from "../GameLoader";
 import PlayerCard from "../PlayerCard";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
-import { useSocketContext } from "@/context/SocketContext";
 
-const ChessBoard = () => {
-	const { roomId } = useParams();
-	const [roomData, setRoomData] = useState<RoomData | null>(null);
-	const { authUser } = useAuthContext();
-	const { loading, getRoomData } = useGetRoomData();
-	const { socket } = useSocketContext();
-
+const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }: ChessBoardProps) => {
 	const chessRef = useRef(new Chess());
 	const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-	const fetchRoomData = async () => {
-		if (roomId) {
-			const data = await getRoomData(roomId);
-			setRoomData(data);
-			setFen(data?.fen);
-		} else {
-			toast.error("Error in getting Room Data");
-		}
-	}
+	useEffect(() => {
+		setFen(roomData.fen);
+	}, [roomData]);
 
 	const handleMove = ({ sourceSquare, targetSquare }: { piece: any; sourceSquare: string; targetSquare: string | null }) => {
-		if (!targetSquare) {
-			return false;
-		}
+		if (!targetSquare) return false;
 
 		const currentTurn = fen.split(" ")[1];
-		const isPlayer1 = authUser?._id === roomData?.player1.userId;
-		const myColor = isPlayer1 ? roomData?.player1.color : roomData?.player2.color;
+		const isPlayer1 = authUser?._id === roomData.player1.userId;
+		const myColor = isPlayer1 ? roomData.player1.color : roomData.player2.color;
 
 		if (currentTurn !== myColor) {
 			toast.error("It's not your turn.");
@@ -51,18 +32,20 @@ const ChessBoard = () => {
 				promotion: "q",
 			});
 
-			if (move === null) return false;
+			if (!move) return false;
 
+			const moveNotation = move.san;
 			const updatedFen = chessRef.current.fen();
+
+			setMoves((prev) => [...prev, moveNotation]);
 			setFen(updatedFen);
 
-			if (roomId && authUser) {
-				socket.emit("handleMove", {
-					roomId,
-					userId: authUser._id,
-					fen: updatedFen,
-				});
-			}
+			socket.emit("handleMove", {
+				roomId: roomData.roomId,
+				userId: authUser._id,
+				fen: updatedFen,
+				move: moveNotation
+			});
 
 			return true;
 		} catch {
@@ -71,16 +54,13 @@ const ChessBoard = () => {
 	};
 
 	useEffect(() => {
-		fetchRoomData();
-	}, [roomId]);
+		if (!roomData || !authUser || !socket) return;
 
-	useEffect(() => {
-		if (!roomId || !authUser || !socket) return;
-
-		const handleOpponentMove = (opponentFen: string) => {
+		const handleOpponentMove = ({ opponentFen, moves }: MoveProps) => {
 			try {
 				chessRef.current.load(opponentFen);
 				setFen(opponentFen);
+				setMoves(moves);
 			} catch (err) {
 				console.error("Invalid FEN received:", opponentFen);
 			}
@@ -92,7 +72,7 @@ const ChessBoard = () => {
 		return () => {
 			socket.off("handleMove", handleOpponentMove);
 		};
-	}, [roomId, authUser, socket]);
+	}, [roomData, authUser, socket]);
 
 	// Error handlers
 	useEffect(() => {
@@ -138,16 +118,14 @@ const ChessBoard = () => {
 
 	console.log(roomData);
 	console.log(fen);
-
-	if (loading || !roomData || !authUser) return <GameLoader />;
+	console.log(moves);
 
 	const isPlayer1 = authUser._id === roomData.player1.userId;
-
 	const me = isPlayer1 ? roomData.player1 : roomData.player2;
 	const opponent = isPlayer1 ? roomData.player2 : roomData.player1;
 
 	return (
-		<div className="flex flex-col w-2/3 lg:w-[480px] items-center justify-center rounded-lg overflow-hidden">
+		<div className="flex flex-col w-2/3 lg:w-[500px] items-center justify-center rounded-lg overflow-hidden">
 			<PlayerCard {...opponent} />
 
 			<div className="aspect-square">

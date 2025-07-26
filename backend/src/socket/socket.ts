@@ -47,6 +47,7 @@ io.on("connection", async (socket) => {
             roomId: data.roomId,
             userId: data.userId,
             fen: data.fen,
+            move: data.move,
             socket: socket
         });
     });

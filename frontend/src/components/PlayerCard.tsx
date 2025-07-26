@@ -22,7 +22,7 @@ const PlayerCard = ({ username, elo, nationality, profilePic, gender }: PlayerDa
 
 	return (
 		<div className="w-full bg-gray-700/70 p-3 flex items-center gap-2">
-			<Avatar className="size-12">
+			<Avatar className="size-12 lg:size-12">
 				<AvatarImage src={profileImage} />
 				<AvatarFallback>
 					{username.substring(0, 2).toUpperCase()}

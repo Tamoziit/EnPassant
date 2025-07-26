@@ -193,12 +193,12 @@ export const getRoomData = async (req: Request, res: Response) => {
 	}
 }
 
-export const handleMove = async ({ roomId, userId, fen, socket }: HandleMoveProps) => {
+export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMoveProps) => {
 	try {
 		const data = await client.get(`ROOM:${roomId}`);
 
 		if (data) {
-			const room = JSON.parse(data);
+			const room = JSON.parse(data) as RoomData;
 
 			const currentPlayer = room.player1.userId === userId ? room.player1 : room.player2;
 			const opponentPlayer = room.player1.userId === userId ? room.player2 : room.player1;
@@ -210,6 +210,7 @@ export const handleMove = async ({ roomId, userId, fen, socket }: HandleMoveProp
 			}
 
 			room.fen = fen;
+			room.moves.push(move);
 			await client.set(`ROOM:${roomId}`, JSON.stringify(room));
 			const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
 
@@ -219,7 +220,10 @@ export const handleMove = async ({ roomId, userId, fen, socket }: HandleMoveProp
 				return;
 			}
 
-			io.to(opponentSocketId).emit("handleMove", fen);
+			io.to(opponentSocketId).emit("handleMove", {
+				opponentFen: fen,
+				moves: room.moves
+			});
 		} else {
 			socket.emit("roomNotFound", "Cannot find Room data");
 		}

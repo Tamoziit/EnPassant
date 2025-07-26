@@ -113,7 +113,7 @@ const GameRoom = () => {
 		<>
 			<AppNavbar />
 
-			<div className="w-full min-h-screen flex flex-col lg:flex-row items-center justify-center px-4 lg:px-10 bg-gradient-to-br from-gray-900 to-black pt-16 gap-3 lg:gap-6">
+			<div className="w-full min-h-screen flex flex-col lg:flex-row items-center justify-center px-4 lg:px-10 bg-gradient-to-br from-gray-900 to-black pt-16 gap-3 lg:gap-6 pb-4">
 				<div className="w-full lg:w-2/3">
 					<GameLoader />
 				</div>

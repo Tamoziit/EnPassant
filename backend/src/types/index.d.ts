@@ -75,5 +75,6 @@ export interface HandleMoveProps {
     roomId: string;
     userId: string;
     fen: string;
+    move: string;
     socket: Socket;
 }

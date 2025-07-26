@@ -58,3 +58,17 @@ export interface RoomData {
     moves: string[];
     status: string;
 }
+
+export interface MoveProps {
+    opponentFen: string;
+    moves: string[];
+}
+
+export interface ChessBoardProps {
+	roomData: RoomData;
+	setRoomData: React.Dispatch<React.SetStateAction<RoomData | null>>;
+	moves: string[];
+	setMoves: React.Dispatch<React.SetStateAction<string[]>>;
+	socket: any;
+	authUser: AuthUser;
+}

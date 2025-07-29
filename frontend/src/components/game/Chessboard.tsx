@@ -1,4 +1,4 @@
-import type { ChessBoardProps, MoveProps } from "@/types";
+import type { ChessBoardProps, MoveProps, ResultProps } from "@/types";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import PlayerCard from "../PlayerCard";
@@ -64,11 +64,14 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 
 				if (isCheck) {
 					toast("CHECK!!", {
-						icon: "⚠️",
+						icon: "♚", // King symbol for chess
 						style: {
-							background: "#FEF3C7",
-							color: "#92400E",
-							border: "1px solid #FACC15",
+							background: "#1F2937", // dark slate (almost black)
+							color: "#FACC15", // golden yellow
+							border: "1px solid #FBBF24", // strong golden border
+							boxShadow: "0 0 4px #FACC15", // glowing effect
+							fontWeight: "semibold",
+							fontSize: "16px",
 						},
 					});
 				}
@@ -76,12 +79,18 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 				console.error("Invalid FEN received:", opponentFen);
 			}
 		};
-		
+
+		const handleEval = (gameEval: string | number) => {
+			console.log(gameEval);
+		}
+
 		socket.on("handleMove", handleOpponentMove);
+		socket.on("gameEval", handleEval);
 
 		// Cleaning up listener on unmount
 		return () => {
 			socket.off("handleMove", handleOpponentMove);
+			socket.off("gameEval", handleEval);
 		};
 	}, [roomData, authUser, socket]);
 
@@ -120,10 +129,17 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 			toast.success(msg || "Opponent Disconnect, You win by Abandonment!");
 		};
 
+		const gameResult = ({ status, winner }: ResultProps) => {
+			toast.success(status);
+			console.log(winner);
+		}
+
 		socket.on("win", winByAbandonment);
+		socket.on("gameEnd", gameResult);
 
 		return () => {
 			socket.off("win", winByAbandonment);
+			socket.off("gameEnd", gameResult);
 		}
 	}, [socket]);
 

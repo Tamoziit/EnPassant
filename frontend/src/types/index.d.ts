@@ -1,3 +1,5 @@
+import type { Socket } from "socket.io-client";
+
 export interface SignupParams {
     fullName: string;
     username: string;
@@ -66,10 +68,15 @@ export interface MoveProps {
 }
 
 export interface ChessBoardProps {
-	roomData: RoomData;
-	setRoomData: React.Dispatch<React.SetStateAction<RoomData | null>>;
-	moves: string[];
-	setMoves: React.Dispatch<React.SetStateAction<string[]>>;
-	socket: any;
-	authUser: AuthUser;
+    roomData: RoomData;
+    setRoomData: React.Dispatch<React.SetStateAction<RoomData | null>>;
+    moves: string[];
+    setMoves: React.Dispatch<React.SetStateAction<string[]>>;
+    socket: Socket;
+    authUser: AuthUser;
+}
+
+export interface ResultProps {
+    status: "checkmate" | "draw" | "stalemate";
+    winner: string | null;
 }

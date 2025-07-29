@@ -6,6 +6,7 @@ import { HandleMoveProps, JoinRoomProps, RoomData } from "../types";
 import { Request, Response } from "express";
 import generateRoomId from "../utils/generateRoomId";
 import chess from "../services/chessEngine";
+import evaluateFEN from "../services/stockfishEval";
 
 const MAX_ELO_DIFF = 100;
 const MAX_WAIT_TIME_MS = 30000;
@@ -198,39 +199,71 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 	try {
 		const data = await client.get(`ROOM:${roomId}`);
 
-		if (data) {
-			const room = JSON.parse(data) as RoomData;
-
-			const currentPlayer = room.player1.userId === userId ? room.player1 : room.player2;
-			const opponentPlayer = room.player1.userId === userId ? room.player2 : room.player1;
-
-			const currentTurn = room.fen.split(" ")[1]; // FEN format: [FEN] [turn] ...
-			if (currentTurn !== currentPlayer.color) {
-				socket.emit("notYourTurn", "Not your turn.");
-				return;
-			}
-
-			room.fen = fen;
-			room.moves.push(move);
-			chess.load(fen);
-			const isCheck = chess.inCheck();
-
-			await client.set(`ROOM:${roomId}`, JSON.stringify(room));
-			const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
-
-			if (!opponentSocketId) {
-				// TODO: Set game state to the other player won
-				socket.emit("win", "Opponent Disconnect, You win by Abandonment");
-				return;
-			}
-
-			io.to(opponentSocketId).emit("handleMove", {
-				opponentFen: fen,
-				moves: room.moves,
-				isCheck
-			});
-		} else {
+		if (!data) {
 			socket.emit("roomNotFound", "Cannot find Room data");
+			return;
+		}
+
+		const room = JSON.parse(data) as RoomData;
+
+		const currentPlayer = room.player1.userId === userId ? room.player1 : room.player2;
+		const opponentPlayer = room.player1.userId === userId ? room.player2 : room.player1;
+
+		const currentTurn = room.fen.split(" ")[1];
+		if (currentTurn !== currentPlayer.color) {
+			socket.emit("notYourTurn", "Not your turn.");
+			return;
+		}
+
+		room.fen = fen;
+		room.moves.push(move);
+
+		chess.load(fen);
+		const isCheck = chess.inCheck();
+		let gameEnded = false;
+
+		if (chess.isCheckmate()) {
+			room.status = "checkmate";
+			gameEnded = true;
+		} else if (chess.isStalemate()) {
+			room.status = "stalemate";
+			gameEnded = true;
+		} else if (chess.isDraw()) {
+			room.status = "draw";
+			gameEnded = true;
+		} else {
+			room.status = "ongoing";
+		}
+
+		await client.set(`ROOM:${roomId}`, JSON.stringify(room));
+
+		const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
+
+		if (!opponentSocketId) {
+			socket.emit("win", "Opponent disconnected. You win by abandonment.");
+			return;
+		}
+
+		io.to(opponentSocketId).emit("handleMove", {
+			opponentFen: fen,
+			moves: room.moves,
+			isCheck
+		});
+
+		if (gameEnded) {
+			const statusPayload = {
+				status: room.status,
+				winner: room.status === "checkmate" ? currentPlayer.userId : null
+			};
+
+			io.to(opponentSocketId).emit("gameEnd", statusPayload);
+			socket.emit("gameEnd", statusPayload);
+		} else {
+			const gameEval = await evaluateFEN(fen);
+			console.log(gameEval);
+
+			io.to(opponentSocketId).emit("gameEval", gameEval);
+			socket.emit("gameEval", gameEval);
 		}
 	} catch (error) {
 		console.error("Error in handleMove:", error);

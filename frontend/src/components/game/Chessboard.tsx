@@ -80,17 +80,11 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 			}
 		};
 
-		const handleEval = (gameEval: string | number) => {
-			console.log(gameEval);
-		}
-
 		socket.on("handleMove", handleOpponentMove);
-		socket.on("gameEval", handleEval);
 
 		// Cleaning up listener on unmount
 		return () => {
 			socket.off("handleMove", handleOpponentMove);
-			socket.off("gameEval", handleEval);
 		};
 	}, [roomData, authUser, socket]);
 

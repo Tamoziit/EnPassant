@@ -80,3 +80,7 @@ export interface ResultProps {
     status: "checkmate" | "draw" | "stalemate";
     winner: string | null;
 }
+
+export interface EvalBarProps {
+    evalScore: number | string;
+};

@@ -1,4 +1,5 @@
 import ChessBoard from "@/components/game/Chessboard";
+import EvalBar from "@/components/game/EvalBar";
 import MoveHistory from "@/components/game/MoveHistory";
 import GameLoader from "@/components/GameLoader";
 import AppNavbar from "@/components/navbars/AppNavbar";
@@ -18,6 +19,7 @@ const Game = () => {
 
 	const [roomData, setRoomData] = useState<RoomData | null>(null);
 	const [moves, setMoves] = useState<string[]>([]);
+	const [evalScore, setEvalScore] = useState<string | number>(0.0);
 
 	const fetchRoomData = async () => {
 		if (roomId) {
@@ -35,13 +37,30 @@ const Game = () => {
 		fetchRoomData();
 	}, [roomId]);
 
-	if (loading || !roomData || !authUser) return <GameLoader />;
+	useEffect(() => {
+		if (!socket) return;
+
+		const handleEval = (gameEval: string | number) => {
+			setEvalScore(gameEval);
+		}
+		socket.on("gameEval", handleEval);
+
+		return () => {
+			socket.off("gameEval", handleEval);
+		}
+	}, [socket]);
+
+	if (loading || !roomData || !authUser || !socket) return <GameLoader />;
 
 	return (
 		<>
 			<AppNavbar />
 
 			<div className="flex gap-6 items-center justify-center px-6 pt-20 pb-10 w-full">
+				<EvalBar
+					evalScore={evalScore}
+				/>
+
 				<ChessBoard
 					roomData={roomData}
 					setRoomData={setRoomData}

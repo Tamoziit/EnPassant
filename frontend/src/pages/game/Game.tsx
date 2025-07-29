@@ -20,6 +20,7 @@ const Game = () => {
 	const [roomData, setRoomData] = useState<RoomData | null>(null);
 	const [moves, setMoves] = useState<string[]>([]);
 	const [evalScore, setEvalScore] = useState<string | number>(0.0);
+	const [colour, setColour] = useState<"w" | "b">("w");
 
 	const fetchRoomData = async () => {
 		if (roomId) {
@@ -27,6 +28,10 @@ const Game = () => {
 			if (data) {
 				setRoomData(data);
 				setMoves(data.moves);
+
+				const isPlayer1 = authUser?._id === data.player1.userId;
+				const myColour = isPlayer1 ? data.player1.color : data.player2.color;
+				setColour(myColour);
 			}
 		} else {
 			toast.error("Room ID not found.");
@@ -59,6 +64,7 @@ const Game = () => {
 			<div className="flex gap-6 items-center justify-center px-6 pt-20 pb-10 w-full">
 				<EvalBar
 					evalScore={evalScore}
+					colour={colour}
 				/>
 
 				<ChessBoard

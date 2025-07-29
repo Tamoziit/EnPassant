@@ -83,4 +83,5 @@ export interface ResultProps {
 
 export interface EvalBarProps {
     evalScore: number | string;
+    colour: "w" | "b";
 };

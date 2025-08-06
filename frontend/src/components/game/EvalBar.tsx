@@ -25,10 +25,8 @@ const EvalBar = ({ evalScore, colour }: EvalBarProps) => {
         isWhiteText = !isWhiteMate;
     }
 
-    console.log(colour)
-
     return (
-        <div className={`relative flex flex-col items-center w-8 h-[580px] lg:h-[610px] rounded bg-neutral-400 overflow-hidden border border-gray-700 shadow-inner ${colour === "w" ? "rotate-180" : ""}`}>
+        <div className={`relative flex flex-col items-center w-10 h-[580px] lg:h-[610px] rounded bg-neutral-400 overflow-hidden border border-gray-700 shadow-inner ${colour === "w" ? "rotate-180" : ""}`}>
             <div
                 className="w-full bg-white transition-all duration-300"
                 style={{ height: `${percentage}%` }}

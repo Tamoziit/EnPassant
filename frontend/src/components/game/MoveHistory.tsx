@@ -1,8 +1,27 @@
+import { blackPieces, whitePieces } from "@/constants/ChessPieces";
+
 interface MoveHistoryProps {
 	moves: string[];
 }
 
 const MoveHistory = ({ moves }: MoveHistoryProps) => {
+	const getPieceFromMove = (move: string, isWhite: boolean) => {
+		if (!move) return null;
+
+		if (move === 'O-O' || move === 'O-O-O') {
+			return isWhite ? whitePieces.K : blackPieces.K;
+		}
+
+		const cleanMove = move.replace(/[+#]$/, '');
+
+		const firstChar = cleanMove[0];
+		if (['K', 'Q', 'R', 'B', 'N'].includes(firstChar)) {
+			return isWhite ? whitePieces[firstChar as keyof typeof whitePieces] : blackPieces[firstChar as keyof typeof blackPieces];
+		}
+
+		return isWhite ? whitePieces.P : blackPieces.P;
+	};
+
 	return (
 		<div className="p-4 w-64 lg:w-80">
 			<h2 className="text-xl mb-2 font-semibold text-gray-200">Move History</h2>
@@ -18,11 +37,28 @@ const MoveHistory = ({ moves }: MoveHistoryProps) => {
 
 							const moveNumber = i / 2 + 1;
 
+							const whitePiece = getPieceFromMove(whiteMove, true);
+							const blackPiece = getPieceFromMove(blackMove, false);
+
 							return (
-								<li key={i} className="text-sm font-medium text-gray-300/90 flex gap-4">
-									<span className="w-2 text-gray-400/70">{moveNumber}.</span>
-									<span className="w-12">{whiteMove}</span>
-									<span className="w-12">{blackMove}</span>
+								<li key={i} className="text-sm font-medium text-gray-300/90 flex gap-2 items-center">
+									<span className="w-2 text-gray-400/70 flex-shrink-0">{moveNumber}.</span>
+
+									{/* White move */}
+									<div className="flex items-center gap-1 w-16">
+										{whitePiece && (
+											<span className="text-lg leading-none text-gray-200">{whitePiece}</span>
+										)}
+										<span className="text-xs">{whiteMove}</span>
+									</div>
+
+									{/* Black move */}
+									<div className="flex items-center gap-1 w-16">
+										{blackPiece && (
+											<span className="text-lg leading-none text-gray-500">{blackPiece}</span>
+										)}
+										<span className="text-xs">{blackMove}</span>
+									</div>
 								</li>
 							);
 						})}
@@ -30,7 +66,7 @@ const MoveHistory = ({ moves }: MoveHistoryProps) => {
 				</div>
 			</div>
 		</div>
-	)
-}
+	);
+};
 
 export default MoveHistory;

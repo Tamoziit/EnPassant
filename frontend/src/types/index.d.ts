@@ -77,7 +77,7 @@ export interface ChessBoardProps {
 }
 
 export interface ResultProps {
-    status: "checkmate" | "draw" | "stalemate";
+    status: "checkmate" | "draw" | "stalemate" | null;
     winner: string | null;
 }
 
@@ -85,3 +85,9 @@ export interface EvalBarProps {
     evalScore: number | string;
     colour: "w" | "b";
 };
+
+export interface ResultModalProps {
+    roomData: RoomData;
+    status: "checkmate" | "draw" | "stalemate" | null;
+    winner: string | null;
+}

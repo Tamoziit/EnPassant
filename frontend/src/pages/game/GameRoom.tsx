@@ -88,7 +88,7 @@ const GameRoom = () => {
 	}, [socket, handleMatchFound, handleSearchError, handleNoMatch]);
 
 	const handleStartGame = () => {
-		if (!authUser || searching) return;
+		if (!authUser || searching || !socket) return;
 
 		console.log("Starting game search for user:", authUser._id);
 		setSearching(true);
@@ -99,7 +99,7 @@ const GameRoom = () => {
 	};
 
 	const handleCancelSearch = () => {
-		if (!searching) return;
+		if (!searching || !socket) return;
 
 		console.log("Cancelling search");
 		setSearching(false);

@@ -4,10 +4,16 @@ import toast from "react-hot-toast";
 import PlayerCard from "../PlayerCard";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
+import ResultModal from "./ResultModal";
 
 const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }: ChessBoardProps) => {
 	const chessRef = useRef(new Chess());
 	const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	const [showModal, setShowModal] = useState(false);
+	const [result, setResult] = useState<ResultProps>({
+		status: null,
+		winner: null
+	});
 
 	useEffect(() => {
 		setFen(roomData.fen);
@@ -124,8 +130,8 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 		};
 
 		const gameResult = ({ status, winner }: ResultProps) => {
-			toast.success(status);
-			console.log(winner);
+			setResult({ status, winner });
+			setShowModal(true);
 		}
 
 		socket.on("win", winByAbandonment);
@@ -140,6 +146,7 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 	console.log(roomData);
 	console.log(fen);
 	console.log(moves);
+	console.log(result)
 
 	const isPlayer1 = authUser._id === roomData.player1.userId;
 	const me = isPlayer1 ? roomData.player1 : roomData.player2;
@@ -166,6 +173,14 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 			</div>
 
 			<PlayerCard {...me} />
+
+			{result && showModal && (
+				<ResultModal
+					roomData={roomData}
+					status={result.status}
+					winner={result.winner}
+				/>
+			)}
 		</div>
 	)
 }

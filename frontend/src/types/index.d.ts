@@ -1,3 +1,4 @@
+import type React from "react";
 import type { Socket } from "socket.io-client";
 
 export interface SignupParams {
@@ -90,4 +91,5 @@ export interface ResultModalProps {
     roomData: RoomData;
     status: "checkmate" | "draw" | "stalemate" | null;
     winner: string | null;
+    setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
 }

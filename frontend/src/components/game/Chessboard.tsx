@@ -179,6 +179,7 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 					roomData={roomData}
 					status={result.status}
 					winner={result.winner}
+					setShowModal={setShowModal}
 				/>
 			)}
 		</div>

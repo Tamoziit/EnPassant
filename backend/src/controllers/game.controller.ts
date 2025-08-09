@@ -128,6 +128,30 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 					socket.emit("matchFound", gameRoom.roomId);
 					io.to(candidateSocketId).emit("matchFound", gameRoom.roomId);
 
+					const opponent = await User.findById(candidate.userId);
+					if (!opponent) {
+						socket.emit("error", "Error occurred while searching for match.");
+						return;
+					}
+
+					user.gameStats = user.gameStats ?? {
+						played: 0,
+						won: 0,
+						lost: 0,
+						draw: 0,
+						stalemate: 0
+					};
+					user.gameStats.played += 1;
+					opponent.gameStats = opponent.gameStats ?? {
+						played: 0,
+						won: 0,
+						lost: 0,
+						draw: 0,
+						stalemate: 0
+					};
+					opponent.gameStats.played += 1;
+
+					await Promise.all([user.save(), opponent.save()]);
 					return;
 				}
 
@@ -258,9 +282,19 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 
 			io.to(opponentSocketId).emit("gameEnd", statusPayload);
 			socket.emit("gameEnd", statusPayload);
+
+			await Promise.all([
+				User.updateOne(
+					{ _id: currentPlayer.userId },
+					{ $inc: { "gameStats.won": 1 } }
+				),
+				User.updateOne(
+					{ _id: opponentPlayer.userId },
+					{ $inc: { "gameStats.lost": 1 } }
+				)
+			]);
 		} else {
 			const gameEval = await evaluateFEN(fen);
-			console.log(gameEval);
 
 			io.to(opponentSocketId).emit("gameEval", gameEval);
 			socket.emit("gameEval", gameEval);

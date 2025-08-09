@@ -7,6 +7,7 @@ import { Request, Response } from "express";
 import generateRoomId from "../utils/generateRoomId";
 import chess from "../services/chessEngine";
 import evaluateFEN from "../services/stockfishEval";
+import updateElo from "../utils/updateElo";
 
 const MAX_ELO_DIFF = 100;
 const MAX_WAIT_TIME_MS = 30000;
@@ -283,15 +284,24 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 			io.to(opponentSocketId).emit("gameEnd", statusPayload);
 			socket.emit("gameEnd", statusPayload);
 
+			const { newRatingA, newRatingB } = updateElo(
+				currentPlayer.elo,
+				opponentPlayer.elo,
+				1, // winner score
+				32 // sensitivity
+			);
+
 			await Promise.all([
 				User.updateOne(
-					{ _id: currentPlayer.userId },
-					{ $inc: { "gameStats.won": 1 } }
-				),
+					{ _id: currentPlayer.userId }, {
+					$inc: { "gameStats.won": 1 },
+					$set: { elo: Math.round(newRatingA) }
+				}),
 				User.updateOne(
-					{ _id: opponentPlayer.userId },
-					{ $inc: { "gameStats.lost": 1 } }
-				)
+					{ _id: opponentPlayer.userId }, {
+					$inc: { "gameStats.lost": 1 },
+					$set: { elo: Math.round(newRatingB) }
+				})
 			]);
 		} else {
 			const gameEval = await evaluateFEN(fen);

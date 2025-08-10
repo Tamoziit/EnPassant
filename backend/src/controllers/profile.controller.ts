@@ -44,6 +44,28 @@ export const getElo = async (req: Request, res: Response) => {
         res.status(200).json(user.elo);
     } catch (error) {
         console.log("Error in getElo controller", error);
+        res.status(500).json({ error: "Internal Server Error" }); console.log("Error in getElo controller", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}
+
+export const getRecords = async (req: Request, res: Response) => {
+    try {
+        const id = req.user?._id;
+        const user = await User.findById(id);
+
+        if (!user) {
+            res.status(400).json({ error: "Cannot find User" });
+            return;
+        }
+
+        res.status(200).json({
+            elo: user.elo,
+            gameStats: user.gameStats,
+            createdAt: user.createdAt
+        });
+    } catch (error) {
+        console.log("Error in getRecords controller", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 }

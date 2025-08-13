@@ -93,3 +93,17 @@ export interface ResultModalProps {
     winner: string | null;
     setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
+export interface GameStats {
+    played: number;
+    won: number;
+    lost: number;
+    draw: number;
+    stalemate: number;
+}
+
+export interface RecordProps {
+    elo: number;
+    gameStats: GameStats;
+    createdAt: string;
+}

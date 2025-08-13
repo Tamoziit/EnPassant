@@ -44,7 +44,6 @@ export const getElo = async (req: Request, res: Response) => {
         res.status(200).json(user.elo);
     } catch (error) {
         console.log("Error in getElo controller", error);
-        res.status(500).json({ error: "Internal Server Error" }); console.log("Error in getElo controller", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 }

@@ -8,6 +8,7 @@ import type { RecordProps } from "@/types";
 import useGetRecords from "@/hooks/useGetRecords";
 import toast from "react-hot-toast";
 import Spinner from "@/components/Spinner";
+import Records from "@/components/Records";
 
 const Home = () => {
 	const { authUser } = useAuthContext();
@@ -60,15 +61,24 @@ const Home = () => {
 				</div>
 			</div>
 
-			<div className="flex w-full px-10 lg:px-16 mt-16 pb-10">
+			<div className="flex w-full px-6 lg:px-16 mt-16 pb-10">
 				{loading ? (
 					<Spinner
 					/>
 				) : (
-					<div className="flex items-center justify-center w-full">
+					<div className="flex flex-col items-center justify-center w-full">
 						<h1 className="text-4xl font-semibold metallic-underline metallic-text">
 							Your Records
 						</h1>
+
+						{records ? (
+							<Records
+								records={records}
+							/>
+						) : (
+							<div>
+							</div>
+						)}
 					</div>
 				)}
 			</div>

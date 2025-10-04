@@ -243,9 +243,14 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 		room.fen = fen;
 		room.moves.push(move);
 
-		chess.load(fen);
+		chess.reset();
+		for (const m of room.moves) {
+			chess.move(m);
+		}
+
 		const isCheck = chess.inCheck();
 		let gameEnded = false;
+		let message = "";
 
 		if (chess.isCheckmate()) {
 			room.status = "checkmate";
@@ -253,8 +258,17 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 		} else if (chess.isStalemate()) {
 			room.status = "stalemate";
 			gameEnded = true;
-		} else if (chess.isDraw()) {
+		} else if (chess.isThreefoldRepetition()) {
 			room.status = "draw";
+			message = "by 3-fold move repetition"
+			gameEnded = true;
+		} else if (chess.isDrawByFiftyMoves()) {
+			room.status = "draw";
+			message = "by 50 move rule"
+			gameEnded = true;
+		} else if (chess.isInsufficientMaterial()) {
+			room.status = "draw";
+			message = "by insufficient Checkmating material"
 			gameEnded = true;
 		} else {
 			room.status = "ongoing";
@@ -278,37 +292,62 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 		if (gameEnded) {
 			const statusPayload = {
 				status: room.status,
+				message,
 				winner: room.status === "checkmate" ? currentPlayer.userId : null
 			};
 
 			io.to(opponentSocketId).emit("gameEnd", statusPayload);
 			socket.emit("gameEnd", statusPayload);
 
-			const { newRatingA, newRatingB } = updateElo(
-				currentPlayer.elo,
-				opponentPlayer.elo,
-				1, // winner score
-				32 // sensitivity
-			);
+			if (room.status === "checkmate") {
+				const { newRatingA, newRatingB } = updateElo(
+					currentPlayer.elo,
+					opponentPlayer.elo,
+					1, // winner score
+					32 // sensitivity
+				);
 
-			await Promise.all([
-				User.updateOne(
-					{ _id: currentPlayer.userId }, {
-					$inc: { "gameStats.won": 1 },
-					$set: { elo: Math.round(newRatingA) }
-				}),
-				User.updateOne(
-					{ _id: opponentPlayer.userId }, {
-					$inc: { "gameStats.lost": 1 },
-					$set: { elo: Math.round(newRatingB) }
-				})
-			]);
-		} else {
-			const gameEval = await evaluateFEN(fen);
-
-			io.to(opponentSocketId).emit("gameEval", gameEval);
-			socket.emit("gameEval", gameEval);
+				await Promise.all([
+					User.updateOne(
+						{ _id: currentPlayer.userId }, {
+						$inc: { "gameStats.won": 1 },
+						$set: { elo: Math.round(newRatingA) }
+					}),
+					User.updateOne(
+						{ _id: opponentPlayer.userId }, {
+						$inc: { "gameStats.lost": 1 },
+						$set: { elo: Math.round(newRatingB) }
+					})
+				]);
+			} else if (room.status === "draw") {
+				await Promise.all([
+					User.updateOne(
+						{ _id: currentPlayer.userId }, {
+						$inc: { "gameStats.draw": 1 },
+					}),
+					User.updateOne(
+						{ _id: opponentPlayer.userId }, {
+						$inc: { "gameStats.draw": 1 },
+					})
+				]);
+			} else if (room.status === "stalemate") {
+				await Promise.all([
+					User.updateOne(
+						{ _id: currentPlayer.userId }, {
+						$inc: { "gameStats.stalemate": 1 },
+					}),
+					User.updateOne(
+						{ _id: opponentPlayer.userId }, {
+						$inc: { "gameStats.stalemate": 1 },
+					})
+				]);
+			}
 		}
+
+		const gameEval = await evaluateFEN(fen);
+
+		io.to(opponentSocketId).emit("gameEval", gameEval);
+		socket.emit("gameEval", gameEval);
 	} catch (error) {
 		console.error("Error in handleMove:", error);
 		socket.emit("error", "Server error while handling move.");

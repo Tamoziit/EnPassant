@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import PlayerCard from "../PlayerCard";
 import { Chess } from "chess.js";
-import { Chessboard } from "react-chessboard";
+import { Chessboard, type PieceDataType } from "react-chessboard";
 import ResultModal from "./ResultModal";
 
 const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }: ChessBoardProps) => {
@@ -12,14 +12,15 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 	const [showModal, setShowModal] = useState(false);
 	const [result, setResult] = useState<ResultProps>({
 		status: null,
-		winner: null
+		winner: null,
+		message: ""
 	});
 
 	useEffect(() => {
 		setFen(roomData.fen);
 	}, [roomData]);
 
-	const handleMove = ({ sourceSquare, targetSquare }: { piece: any; sourceSquare: string; targetSquare: string | null }) => {
+	const handleMove = ({ sourceSquare, targetSquare }: { piece: PieceDataType; sourceSquare: string; targetSquare: string | null }) => {
 		if (!targetSquare) return false;
 
 		const currentTurn = fen.split(" ")[1];
@@ -129,8 +130,8 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 			toast.success(msg || "Opponent Disconnect, You win by Abandonment!");
 		};
 
-		const gameResult = ({ status, winner }: ResultProps) => {
-			setResult({ status, winner });
+		const gameResult = ({ status, winner, message }: ResultProps) => {
+			setResult({ status, winner, message });
 			setShowModal(true);
 		}
 
@@ -146,7 +147,7 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 	console.log(roomData);
 	console.log(fen);
 	console.log(moves);
-	console.log(result)
+	console.log(result);
 
 	const isPlayer1 = authUser._id === roomData.player1.userId;
 	const me = isPlayer1 ? roomData.player1 : roomData.player2;
@@ -179,6 +180,7 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 					roomData={roomData}
 					status={result.status}
 					winner={result.winner}
+					message={result.message}
 					setShowModal={setShowModal}
 				/>
 			)}

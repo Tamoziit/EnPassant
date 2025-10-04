@@ -80,10 +80,17 @@ export interface ChessBoardProps {
 export interface ResultProps {
     status: "checkmate" | "draw" | "stalemate" | null;
     winner: string | null;
+    message: string;
+}
+
+export interface Eval {
+    score: number | string;
+    turn: 'w' | 'b';
 }
 
 export interface EvalBarProps {
     evalScore: number | string;
+    turn: 'w' | 'b';
     colour: "w" | "b";
 };
 
@@ -91,6 +98,7 @@ export interface ResultModalProps {
     roomData: RoomData;
     status: "checkmate" | "draw" | "stalemate" | null;
     winner: string | null;
+    message: string;
     setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
 

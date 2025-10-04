@@ -6,7 +6,7 @@ import AppNavbar from "@/components/navbars/AppNavbar";
 import { useAuthContext } from "@/context/AuthContext";
 import { useSocketContext } from "@/context/SocketContext";
 import useGetRoomData from "@/hooks/useGetRoomData";
-import type { RoomData } from "@/types";
+import type { Eval, RoomData } from "@/types";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useParams } from "react-router-dom";
@@ -19,7 +19,10 @@ const Game = () => {
 
 	const [roomData, setRoomData] = useState<RoomData | null>(null);
 	const [moves, setMoves] = useState<string[]>([]);
-	const [evalScore, setEvalScore] = useState<string | number>(0.0);
+	const [evalScore, setEvalScore] = useState<Eval>({
+		score: 0.0,
+		turn: 'w'
+	});
 	const [colour, setColour] = useState<"w" | "b">("w");
 
 	const fetchRoomData = async () => {
@@ -45,9 +48,10 @@ const Game = () => {
 	useEffect(() => {
 		if (!socket) return;
 
-		const handleEval = (gameEval: string | number) => {
+		const handleEval = (gameEval: Eval) => {
 			setEvalScore(gameEval);
 		}
+		socket.off("gameEval", handleEval);
 		socket.on("gameEval", handleEval);
 
 		return () => {
@@ -63,7 +67,8 @@ const Game = () => {
 
 			<div className="flex gap-6 items-center justify-center px-6 pt-20 pb-10 w-full">
 				<EvalBar
-					evalScore={evalScore}
+					evalScore={evalScore.score}
+					turn={evalScore.turn}
 					colour={colour}
 				/>
 

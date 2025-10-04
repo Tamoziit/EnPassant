@@ -6,16 +6,24 @@ const mapEvalToPercentage = (score: number): number => {
     return Math.max(1, Math.min(99, Math.round(scaled))); // keeping within [1%, 99%]
 };
 
-const EvalBar = ({ evalScore, colour }: EvalBarProps) => {
+const EvalBar = ({ evalScore, turn, colour }: EvalBarProps) => {
     let percentage = 50;
     let displayText = "";
     let isWhiteText = false;
+
+    console.log(evalScore, turn)
 
     if (typeof evalScore === "number") {
         percentage = mapEvalToPercentage(evalScore);
 
         displayText = `${Math.abs(evalScore).toFixed(1)}`;
         isWhiteText = evalScore < 0;
+    } else if (evalScore === "Mate in -0") {
+        displayText = turn === 'b' ? "1-0" : "0-1"; // reverse coz of React strict mode double fetch glitch
+
+        const isWhiteMate = turn === 'b' ? true : false;
+        percentage = isWhiteMate ? 100 : 0;
+        isWhiteText = !isWhiteMate;
     } else if (typeof evalScore === "string") {
         const isWhiteMate = !evalScore.includes("-");
         percentage = isWhiteMate ? 100 : 0;

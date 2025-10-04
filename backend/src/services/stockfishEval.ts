@@ -1,7 +1,10 @@
 import { spawn } from "child_process";
 import path from "path";
 
-type EvalResult = number | string;
+type EvalResult = {
+    score: number | string;
+    turn: 'w' | 'b';
+};
 
 const evaluateFEN = (fen: string): Promise<EvalResult> => {
     return new Promise((resolve, reject) => {
@@ -9,8 +12,9 @@ const evaluateFEN = (fen: string): Promise<EvalResult> => {
         const engine = spawn(enginePath);
 
         let resolved = false;
-        let latestScore: EvalResult | null = null;
-        let isWhiteToMove = !fen.includes(' b ');
+        let latestScore: number | string | null = null;
+        const isWhiteToMove = !fen.includes(' b ');
+        const turn: 'w' | 'b' = isWhiteToMove ? 'w' : 'b';
 
         const handleData = (data: Buffer) => {
             const lines = data.toString().split("\n");
@@ -27,7 +31,7 @@ const evaluateFEN = (fen: string): Promise<EvalResult> => {
                             finalScore = -finalScore;
                         }
 
-                        resolve(finalScore);
+                        resolve({ score: finalScore, turn });
                     }
                     break;
                 }

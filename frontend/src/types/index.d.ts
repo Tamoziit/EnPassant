@@ -115,3 +115,9 @@ export interface RecordProps {
     gameStats: GameStats;
     createdAt: string;
 }
+
+export interface CloudinarySignature {
+    timestamp: number;
+    signature: string;
+    api_key: string;
+}

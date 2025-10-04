@@ -17,6 +17,7 @@
     "@react-three/fiber": "^9.2.0",
     "@tailwindcss/vite": "^4.1.8",
     "@types/three": "^0.178.1",
+    "browser-image-compression": "^2.0.2",
     "chess.js": "^1.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

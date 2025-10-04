@@ -3,12 +3,37 @@ import AppNavbar from "../../components/navbars/AppNavbar";
 import { useAuthContext } from "../../context/AuthContext";
 import Spinner from "../../components/Spinner";
 import { FaPen } from "react-icons/fa";
+import toast from "react-hot-toast";
+import uploadImageToCloudinary from "@/utils/uploadImageToCloudinary";
+import useGetCloudinarySignature from "@/hooks/useGetCloudinarySignature";
+import Records from "@/components/Records";
+import useGetRecords from "@/hooks/useGetRecords";
+import type { RecordProps } from "@/types";
+import ReactCountryFlag from "react-country-flag";
+import useUpdateProfile from "@/hooks/useUpdateProfile";
 
 const Profile = () => {
 	const { authUser } = useAuthContext();
 	const [profilePic, setProfilePic] = useState(authUser?.profilePic || "");
-	const [uploading, setUploading] = useState(false);
 	const fileInputRef = useRef(null);
+	const [uploading, setUploading] = useState<boolean>(false);
+	const { loading: signing, getCloudinarySignature } = useGetCloudinarySignature();
+	const { loading: updating, updateProfile } = useUpdateProfile();
+	const [records, setRecords] = useState<RecordProps | null>(null);
+	const { loading, getRecords } = useGetRecords();
+
+	const fetchRecords = async () => {
+		const data = await getRecords();
+		if (data) {
+			setRecords(data);
+		} else {
+			toast.error("Error in fetching your Records!");
+		}
+	}
+
+	useEffect(() => {
+		fetchRecords();
+	}, []);
 
 	const getProfilePic = () => {
 		if (!authUser?.profilePic) {
@@ -23,21 +48,38 @@ const Profile = () => {
 
 	const handleProfilePicChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		setUploading(true);
-		const file = e.target.files?.[0];
-		if (file) {
-			// Upload to a cloud storage
-			console.log(file);
+
+		try {
+			const file = e.target.files?.[0];
+			if (!file) {
+				setUploading(false);
+				return;
+			}
+
 			const previewUrl = URL.createObjectURL(file);
 			setProfilePic(previewUrl);
+
+			const uploadedUrl = await uploadImageToCloudinary(previewUrl, getCloudinarySignature);
+
+			if (uploadedUrl) {
+				await updateProfile(uploadedUrl);
+				setProfilePic(uploadedUrl);
+			} else {
+				toast.error("Failed to upload profile picture");
+			}
+		} catch (error) {
+			console.log("Profile pic upload error:", error);
+			toast.error("Couldn't upload profile picture");
+		} finally {
+			setUploading(false);
 		}
-		setUploading(false);
-	}
+	};
 
 	useEffect(() => {
 		getProfilePic();
 	}, []);
 
-	if (profilePic == "") return (
+	if (profilePic == "" || !authUser) return (
 		<div className="flex w-full min-h-screen items-center justify-center z-0">
 			<Spinner size="large" />
 		</div>
@@ -47,7 +89,7 @@ const Profile = () => {
 		<>
 			<AppNavbar />
 
-			<div className="flex w-full min-h-screen items-center justify-center z-0">
+			<div className="flex flex-col w-full min-h-screen items-center justify-center z-0 pt-22">
 				<div className="glassmorphic-2 flex flex-col gap-2 items-center justify-center p-6 rounded-lg shadow-xl backdrop-blur-lg backdrop-filter mb-10 z-0">
 					<div className="flex items-center justify-center relative">
 						<img
@@ -60,7 +102,7 @@ const Profile = () => {
 							htmlFor="profile-pic-upload"
 							className="absolute bottom-0 right-6 bg-gray-700 p-2.5 rounded-full cursor-pointer hover:bg-gray-800 transition"
 						>
-							{uploading ? <Spinner size="medium" /> : (
+							{uploading || signing || updating ? <Spinner size="small" /> : (
 								<div>
 									<FaPen className="size-5.5 text-white" />
 									<input
@@ -91,11 +133,43 @@ const Profile = () => {
 							<b className="text-blue-400">Gender: </b>
 							{authUser?.gender === "M" ? "Male" : "Female"}
 						</p>
+						<p className="text-gray-200">
+							<b className="text-blue-400">Nationality: </b>
+							<ReactCountryFlag
+								countryCode={authUser?.nationality}
+								svg
+								style={{ width: '1.5em', height: '1.5em' }}
+								title={authUser?.nationality}
+							/>
+						</p>
 					</div>
+				</div>
+
+				<div className="flex w-full px-6 lg:px-16 pb-10">
+					{loading ? (
+						<Spinner
+						/>
+					) : (
+						<div className="flex flex-col items-center justify-center w-full">
+							<h1 className="text-4xl font-semibold metallic-underline metallic-text">
+								Your Records
+							</h1>
+
+							{records ? (
+								<Records
+									records={records}
+								/>
+							) : (
+								<div className="flex w-full items-center justify-center mt-6">
+									<span className="text-gray-500">Cannot fetch records. Try again later!</span>
+								</div>
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 		</>
 	)
 }
 
-export default Profile
+export default Profile;

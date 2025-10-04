@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import User from "../models/user.model";
+import crypto from "crypto";
 
 export const updateProfile = async (req: Request, res: Response) => {
     try {
@@ -67,4 +68,20 @@ export const getRecords = async (req: Request, res: Response) => {
         console.log("Error in getRecords controller", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
+}
+
+export const getCloudinarySignature = async (req: Request, res: Response) => {
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const paramsToSign = `timestamp=${timestamp}&upload_preset=${process.env.CLOUDINARY_UPLOAD_PRESET}`;
+
+    const signature = crypto
+        .createHash("sha1")
+        .update(paramsToSign + process.env.CLOUDINARY_API_SECRET)
+        .digest("hex");
+
+    res.status(200).json({
+        timestamp,
+        signature,
+        api_key: process.env.CLOUDINARY_API_KEY
+    });
 }

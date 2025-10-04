@@ -29,8 +29,6 @@ const Home = () => {
 		fetchRecords();
 	}, []);
 
-	console.log(records);
-
 	return (
 		<>
 			<AppNavbar />
@@ -76,7 +74,8 @@ const Home = () => {
 								records={records}
 							/>
 						) : (
-							<div>
+							<div className="flex w-full items-center justify-center mt-6">
+								<span className="text-gray-500">Cannot fetch records. Try again later!</span>
 							</div>
 						)}
 					</div>

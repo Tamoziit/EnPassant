@@ -5,6 +5,8 @@ import PlayerCard from "../PlayerCard";
 import { Chess } from "chess.js";
 import { Chessboard, type PieceDataType } from "react-chessboard";
 import ResultModal from "./ResultModal";
+import getOpeningByFEN from "@/utils/getOpeningByFEN";
+import Opening from "./Opening";
 
 const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }: ChessBoardProps) => {
 	const chessRef = useRef(new Chess());
@@ -15,6 +17,7 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 		winner: null,
 		message: ""
 	});
+	const [opening, setOpening] = useState<string>("");
 
 	useEffect(() => {
 		setFen(roomData.fen);
@@ -43,9 +46,13 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 
 			const moveNotation = move.san;
 			const updatedFen = chessRef.current.fen();
+			const openingName = getOpeningByFEN(updatedFen);
 
 			setMoves((prev) => [...prev, moveNotation]);
 			setFen(updatedFen);
+			if (openingName !== "") {
+				setOpening(openingName);
+			}
 
 			socket.emit("handleMove", {
 				roomId: roomData.roomId,
@@ -66,8 +73,13 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 		const handleOpponentMove = ({ opponentFen, moves, isCheck }: MoveProps) => {
 			try {
 				chessRef.current.load(opponentFen);
+				const openingName = getOpeningByFEN(opponentFen);
+
 				setFen(opponentFen);
 				setMoves(moves);
+				if (openingName !== "") {
+					setOpening(openingName);
+				}
 
 				if (isCheck) {
 					toast("CHECK!!", {
@@ -148,42 +160,49 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 	console.log(fen);
 	console.log(moves);
 	console.log(result);
+	console.log(opening);
 
 	const isPlayer1 = authUser._id === roomData.player1.userId;
 	const me = isPlayer1 ? roomData.player1 : roomData.player2;
 	const opponent = isPlayer1 ? roomData.player2 : roomData.player1;
 
 	return (
-		<div className="flex flex-col w-2/3 lg:w-[500px] items-center justify-center rounded-lg overflow-hidden">
-			<PlayerCard {...opponent} />
+		<div className="flex w-2/3 lg:w-[500px] flex-col gap-1">
+			<div className="flex flex-col w-full items-center justify-center rounded-lg overflow-hidden">
+				<PlayerCard {...opponent} />
 
-			<div className="aspect-square">
-				<Chessboard
-					options={{
-						position: fen,
-						onPieceDrop: handleMove,
-						boardOrientation: me.color === "w" ? "white" : "black",
-						darkSquareStyle: { backgroundColor: "#1E3A8A" },
-						lightSquareStyle: { backgroundColor: "#BFDBFE" },
-						dropSquareStyle: {
-							backgroundColor: "#FDE68A"
-						},
-						animationDurationInMs: 200
-					}}
-				/>
+				<div className="aspect-square">
+					<Chessboard
+						options={{
+							position: fen,
+							onPieceDrop: handleMove,
+							boardOrientation: me.color === "w" ? "white" : "black",
+							darkSquareStyle: { backgroundColor: "#1E3A8A" },
+							lightSquareStyle: { backgroundColor: "#BFDBFE" },
+							dropSquareStyle: {
+								backgroundColor: "#FDE68A"
+							},
+							animationDurationInMs: 200
+						}}
+					/>
+				</div>
+
+				<PlayerCard {...me} />
+
+				{result && showModal && (
+					<ResultModal
+						roomData={roomData}
+						status={result.status}
+						winner={result.winner}
+						message={result.message}
+						setShowModal={setShowModal}
+					/>
+				)}
 			</div>
 
-			<PlayerCard {...me} />
-
-			{result && showModal && (
-				<ResultModal
-					roomData={roomData}
-					status={result.status}
-					winner={result.winner}
-					message={result.message}
-					setShowModal={setShowModal}
-				/>
-			)}
+			<Opening
+				opening={opening}
+			/>
 		</div>
 	)
 }

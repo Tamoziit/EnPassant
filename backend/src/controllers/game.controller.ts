@@ -426,7 +426,7 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
 			move = chess.move({
 				from: from,
 				to: to,
-				promotion: promotion
+				promotion: promotion.toLowerCase()
 			});
 		} else {
 			move = chess.move({

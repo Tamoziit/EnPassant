@@ -415,6 +415,9 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
 		room.moves = moves;
 		const chess = new Chess();
 		chess.load(fen);
+		const gameEval1 = await evaluateFEN(fen);
+
+		socket.emit("botGameEval", gameEval1);
 
 		const { from, to, promotion } = await getBestMove(fen);
 
@@ -490,9 +493,9 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
 			socket.emit("botGameEnd", statusPayload);
 		}
 
-		const gameEval = await evaluateFEN(fen);
+		const gameEval2 = await evaluateFEN(room.fen);
 
-		socket.emit("botGameEval", gameEval);
+		socket.emit("botGameEval", gameEval2);
 	} catch (error) {
 		console.error("Error in handleBotPlay:", error);
 		socket.emit("error", "Server error while handling bot move.");

@@ -9,6 +9,8 @@ import { useAuthContext } from "./context/AuthContext";
 import Profile from "./pages/profile/Profile";
 import GameRoom from "./pages/game/GameRoom";
 import Game from "./pages/game/Game";
+import BotGame from "./pages/bot/BotGame";
+import PlayBots from "./pages/bot/PlayBots";
 
 function App() {
 	const { authUser } = useAuthContext();
@@ -25,6 +27,8 @@ function App() {
 					<Route path="/profile" element={authUser ? <Profile /> : <Navigate to="/" />} />
 					<Route path="/game-room" element={authUser ? <GameRoom /> : <Navigate to="/" />} />
 					<Route path="/game/:roomId" element={authUser ? <Game /> : <Navigate to="/" />} />
+					<Route path="/bot-room" element={authUser ? <PlayBots /> : <Navigate to="/" />} />
+					<Route path="/bot-game/:roomId" element={authUser ? <BotGame /> : <Navigate to="/" />} />
 				</Routes>
 
 				<Toaster />

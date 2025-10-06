@@ -59,7 +59,7 @@ export interface RoomData {
     player2: PlayerData;
     fen: string;
     moves: string[];
-    status: string;
+    status: "ongoing" | "checkmate" | "draw" | "stalemate";
 }
 
 export interface MoveProps {
@@ -73,6 +73,15 @@ export interface ChessBoardProps {
     setRoomData: React.Dispatch<React.SetStateAction<RoomData | null>>;
     moves: string[];
     setMoves: React.Dispatch<React.SetStateAction<string[]>>;
+    socket: Socket;
+    authUser: AuthUser;
+}
+
+export interface BotChessBoardProps {
+    botRoomData: BotRoomData;
+    moves: string[];
+    setMoves: React.Dispatch<React.SetStateAction<string[]>>;
+    colour: "w" | "b";
     socket: Socket;
     authUser: AuthUser;
 }
@@ -120,4 +129,21 @@ export interface CloudinarySignature {
     timestamp: number;
     signature: string;
     api_key: string;
+}
+
+export interface BotRoomData {
+    roomId: string;
+    user: PlayerData;
+    player2: PlayerData;
+    fen: string;
+    moves: string[];
+    status: "ongoing" | "checkmate" | "draw" | "stalemate";
+}
+
+interface BotResultModalProps {
+    botRoomData: BotRoomData;
+    status: "checkmate" | "draw" | "stalemate" | null;
+    winner: string | null;
+    message?: string;
+    setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
 }

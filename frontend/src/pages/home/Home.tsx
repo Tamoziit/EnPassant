@@ -33,7 +33,7 @@ const Home = () => {
 		<>
 			<AppNavbar />
 
-			<div className="flex flex-col md:flex-row items-center justify-around px-10 lg:px-16 pt-22 gap-6 ">
+			<div className="flex flex-col md:flex-row items-center justify-around px-10 lg:px-16 pt-22 gap-6">
 				<div className="flex w-full md:w-1/2 lg:w-2/3">
 					<HeroModel />
 				</div>
@@ -46,14 +46,23 @@ const Home = () => {
 						{authUser?.fullName}
 					</h2>
 
-					<div className="w-full mt-6">
+					<div className="w-full flex flex-col gap-4 mt-6">
 						<Button
 							variant="default"
 							size="lg"
-							className="w-full  text-xl md:text-2xl md:font-bold ring-3 ring-blue-300 cursor-pointer"
+							className="w-full text-xl md:text-2xl md:font-bold ring-3 ring-blue-300 cursor-pointer"
 							onClick={() => navigate("/game-room")}
 						>
 							Play Online
+						</Button>
+
+						<Button
+							variant="ghost"
+							size="lg"
+							className="w-full text-xl text-blue-300 md:text-2xl md:font-bold ring-3 ring-blue-400 cursor-pointer"
+							onClick={() => navigate("/bot-room")}
+						>
+							Play a Bot
 						</Button>
 					</div>
 				</div>

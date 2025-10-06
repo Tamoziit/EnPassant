@@ -81,7 +81,7 @@ const evaluateFEN = (fen: string): Promise<EvalResult> => {
             engine.stdin.write(`position fen ${fen}\n`);
             engine.stdin.write("go depth 15\n");
             engine.stdin.write("go movetime 2000\n");
-        }, 100);
+        }, 200);
 
         engine.on('exit', () => {
             clearTimeout(timeout);

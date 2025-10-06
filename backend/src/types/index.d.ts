@@ -63,7 +63,7 @@ export interface RoomData {
     player2: PlayerData;
     fen: string;
     moves: string[];
-    status: string;
+    status: "ongoing" | "checkmate" | "draw" | "stalemate";
 }
 
 export interface JoinRoomProps {
@@ -77,4 +77,25 @@ export interface HandleMoveProps {
     fen: string;
     move: string;
     socket: Socket;
+}
+
+export interface HandleBotMoveProps {
+    roomId: string;
+    userId: string;
+    fen: string;
+    moves: string[];
+    socket: Socket;
+}
+
+export interface BotGameProps {
+    userId: Types.ObjectId;
+    socket: Socket;
+}
+
+export interface BotRoomData {
+    roomId: string;
+    user: PlayerData;
+    fen: string;
+    moves: string[];
+    status: "ongoing" | "checkmate" | "draw" | "stalemate";
 }

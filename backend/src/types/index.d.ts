@@ -55,6 +55,7 @@ export interface PlayerData {
     color: "w" | "b";
     profilePic?: string | null;
     gender: "M" | "F";
+    timeRemaining: number;
 }
 
 export interface RoomData {
@@ -63,7 +64,12 @@ export interface RoomData {
     player2: PlayerData;
     fen: string;
     moves: string[];
-    status: "ongoing" | "checkmate" | "draw" | "stalemate";
+    status: "ongoing" | "checkmate" | "draw" | "stalemate" | "timeout";
+    timeControl: {
+        initial: number;
+        increment: number;
+    };
+    lastMoveTimestamp: number;
 }
 
 export interface JoinRoomProps {
@@ -92,9 +98,19 @@ export interface BotGameProps {
     socket: Socket;
 }
 
+export interface BotPlayerData {
+    userId: string;
+    username: string;
+    elo: number;
+    nationality: string;
+    color: "w" | "b";
+    profilePic?: string | null;
+    gender: "M" | "F";
+}
+
 export interface BotRoomData {
     roomId: string;
-    user: PlayerData;
+    user: BotPlayerData;
     fen: string;
     moves: string[];
     status: "ongoing" | "checkmate" | "draw" | "stalemate";

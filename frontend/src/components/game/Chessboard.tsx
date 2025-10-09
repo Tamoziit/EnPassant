@@ -7,10 +7,16 @@ import { Chessboard, type PieceDataType } from "react-chessboard";
 import ResultModal from "./ResultModal";
 import getOpeningByFEN from "@/utils/getOpeningByFEN";
 import Opening from "./Opening";
+import Timer from "./Timer";
 
 const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }: ChessBoardProps) => {
 	const chessRef = useRef(new Chess());
 	const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	const [playerTimes, setPlayerTimes] = useState({
+		[roomData.player1.userId]: roomData.player1.timeRemaining,
+		[roomData.player2.userId]: roomData.player2.timeRemaining
+	});
+	const [lastMoveTimestamp, setLastMoveTimestamp] = useState(roomData.lastMoveTimestamp || Date.now());
 	const [showModal, setShowModal] = useState(false);
 	const [result, setResult] = useState<ResultProps>({
 		status: null,
@@ -70,13 +76,15 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 	useEffect(() => {
 		if (!roomData || !authUser || !socket) return;
 
-		const handleOpponentMove = ({ opponentFen, moves, isCheck }: MoveProps) => {
+		const handleOpponentMove = ({ opponentFen, moves, isCheck, playerTimes: newPlayerTimes, lastMoveTimestamp: newTimestamp }: MoveProps) => {
 			try {
 				chessRef.current.load(opponentFen);
 				const openingName = getOpeningByFEN(opponentFen);
 
 				setFen(opponentFen);
 				setMoves(moves);
+				setPlayerTimes(newPlayerTimes);
+				setLastMoveTimestamp(newTimestamp);
 				if (openingName !== "") {
 					setOpening(openingName);
 				}
@@ -165,11 +173,22 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 	const isPlayer1 = authUser._id === roomData.player1.userId;
 	const me = isPlayer1 ? roomData.player1 : roomData.player2;
 	const opponent = isPlayer1 ? roomData.player2 : roomData.player1;
+	const currentTurn = fen.split(" ")[1];
+	const isMyTurn = currentTurn === me.color;
 
 	return (
 		<div className="flex w-2/3 lg:w-[500px] flex-col gap-1">
 			<div className="flex flex-col w-full items-center justify-center rounded-lg overflow-hidden">
-				<PlayerCard {...opponent} />
+				<div className="flex bg-gray-700/70 items-center justify-between w-full px-4">
+					<PlayerCard {...opponent} />
+					<Timer
+						initialTime={playerTimes[opponent.userId]}
+						isActive={!isMyTurn && roomData.status === "ongoing"}
+						serverTime={playerTimes[opponent.userId]}
+						lastMoveTimestamp={lastMoveTimestamp}
+						status={result.status}
+					/>
+				</div>
 
 				<div className="aspect-square">
 					<Chessboard
@@ -187,7 +206,16 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 					/>
 				</div>
 
-				<PlayerCard {...me} />
+				<div className="flex bg-gray-700/70 items-center justify-between w-full px-4">
+					<PlayerCard {...me} />
+					<Timer
+						initialTime={playerTimes[me.userId]}
+						isActive={isMyTurn && roomData.status === "ongoing"}
+						serverTime={playerTimes[me.userId]}
+						lastMoveTimestamp={lastMoveTimestamp}
+						status={result.status}
+					/>
+				</div>
 
 				{result && showModal && (
 					<ResultModal
@@ -200,9 +228,7 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 				)}
 			</div>
 
-			<Opening
-				opening={opening}
-			/>
+			<Opening opening={opening} />
 		</div>
 	)
 }

@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import User from "../models/user.model";
 import client from "../redis/client";
 import { io } from "../socket/socket";
-import { BotGameProps, BotRoomData, HandleBotMoveProps, HandleMoveProps, JoinRoomProps, RoomData } from "../types";
+import { BotGameProps, BotPlayerData, BotRoomData, HandleBotMoveProps, HandleMoveProps, JoinRoomProps, PlayerData, RoomData } from "../types";
 import { Request, Response } from "express";
 import generateRoomId from "../utils/generateRoomId";
 import chess from "../services/chessEngine";
@@ -102,12 +102,14 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 					const userIsPlayer1 = Math.random() < 0.5;
 					const player1 = {
 						...(userIsPlayer1 ? userObj : candidate),
-						color: "w"
-					};
+						color: "w",
+						timeRemaining: 1 * 60 * 1000
+					} as PlayerData;
 					const player2 = {
 						...(userIsPlayer1 ? candidate : userObj),
-						color: "b"
-					};
+						color: "b",
+						timeRemaining: 1 * 60 * 1000
+					} as PlayerData;
 					const roomId = `GM-${generateRoomId()}`;
 
 					const gameRoom = {
@@ -116,12 +118,18 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 						player2,
 						fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
 						moves: [],
-						status: "ongoing"
+						status: "ongoing",
+						timeControl: {
+							initial: 1 * 60 * 1000,
+							increment: 0
+						},
+						lastMoveTimestamp: Date.now()
 					} as RoomData;
 
 					// Persisting room in Redis
 					await client.set(`ROOM:${roomId}`, JSON.stringify(gameRoom));
 					await client.expire(`ROOM:${roomId}`, 86400); // 24 hrs
+					await client.sadd("ACTIVE_GAMES", roomId); // active rooms for time sync
 
 					console.log(`Match found! Room: ${roomId}`);
 					console.log(`Player1: ${player1.username} (${player1.color})`);
@@ -242,6 +250,65 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 			return;
 		}
 
+		const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
+		if (!opponentSocketId) {
+			socket.emit("win", "Opponent disconnected. You win by abandonment.");
+			await client.srem("ACTIVE_GAMES", roomId); // removing from active rooms
+			return;
+		}
+
+		// Clock Logic
+		const now = Date.now();
+		const timeElapsed = now - (room.lastMoveTimestamp || now);
+
+		currentPlayer.timeRemaining = Math.max(0, currentPlayer.timeRemaining - timeElapsed);
+
+		// Checking for timeout
+		if (currentPlayer.timeRemaining <= 0) {
+			room.status = "timeout";
+			await client.set(`ROOM:${roomId}`, JSON.stringify(room));
+			await client.srem("ACTIVE_GAMES", roomId);
+
+			const statusPayload = {
+				status: "timeout",
+				message: "Won by Timeout",
+				winner: opponentPlayer.userId
+			};
+
+			io.to(opponentSocketId).emit("gameEnd", statusPayload);
+			socket.emit("gameEnd", statusPayload);
+
+			const { newRatingA, newRatingB } = updateElo(
+				opponentPlayer.elo,
+				currentPlayer.elo,
+				1, // winner score
+				32 // sensitivity
+			);
+
+			await Promise.all([
+				User.updateOne(
+					{ _id: opponentPlayer.userId },
+					{
+						$inc: { "gameStats.won": 1 },
+						$set: { elo: Math.round(newRatingA) }
+					}
+				),
+				User.updateOne(
+					{ _id: currentPlayer.userId },
+					{
+						$inc: { "gameStats.lost": 1 },
+						$set: { elo: Math.round(newRatingB) }
+					}
+				)
+			]);
+
+			return;
+		}
+
+		// Not flagged
+		currentPlayer.timeRemaining += room.timeControl.increment;
+		room.lastMoveTimestamp = now;
+
 		room.fen = fen;
 		room.moves.push(move);
 
@@ -278,20 +345,20 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 
 		await client.set(`ROOM:${roomId}`, JSON.stringify(room));
 
-		const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
-
-		if (!opponentSocketId) {
-			socket.emit("win", "Opponent disconnected. You win by abandonment.");
-			return;
-		}
-
 		io.to(opponentSocketId).emit("handleMove", {
 			opponentFen: fen,
 			moves: room.moves,
-			isCheck
+			isCheck,
+			playerTimes: {
+				[currentPlayer.userId]: currentPlayer.timeRemaining,
+				[opponentPlayer.userId]: opponentPlayer.timeRemaining
+			},
+			lastMoveTimestamp: room.lastMoveTimestamp
 		});
 
 		if (gameEnded) {
+			await client.srem("ACTIVE_GAMES", roomId);
+
 			const statusPayload = {
 				status: room.status,
 				message,
@@ -356,6 +423,85 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 	}
 };
 
+export const checkRoomTimeout = async (roomId: string) => {
+	try {
+		const data = await client.get(`ROOM:${roomId}`);
+
+		if (!data) {
+			await client.srem("ACTIVE_GAMES", roomId);
+			return;
+		}
+
+		const room = JSON.parse(data) as RoomData;
+
+		if (room.status !== "ongoing") {
+			await client.srem("ACTIVE_GAMES", roomId);
+			return;
+		}
+
+		const now = Date.now();
+		const timeElapsed = now - room.lastMoveTimestamp;
+		const currentTurn = room.fen.split(" ")[1];
+
+		const currentPlayer = currentTurn === room.player1.color ? room.player1 : room.player2;
+		const opponentPlayer = currentTurn === room.player1.color ? room.player2 : room.player1;
+
+		const actualTimeRemaining = currentPlayer.timeRemaining - timeElapsed;
+
+		// Checking for timeout
+		if (actualTimeRemaining <= 0) {
+			room.status = "timeout";
+			currentPlayer.timeRemaining = 0;
+			await client.set(`ROOM:${roomId}`, JSON.stringify(room));
+
+			// Removing from active games
+			await client.srem("ACTIVE_GAMES", roomId);
+
+			const statusPayload = {
+				status: "timeout",
+				message: "Won by Timeout",
+				winner: opponentPlayer.userId
+			};
+
+			const currentPlayerSocketId = await client.hget("player_sockets", currentPlayer.userId);
+			const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
+
+			if (currentPlayerSocketId) {
+				io.to(currentPlayerSocketId).emit("gameEnd", statusPayload);
+			}
+			if (opponentSocketId) {
+				io.to(opponentSocketId).emit("gameEnd", statusPayload);
+			}
+
+			const { newRatingA, newRatingB } = updateElo(
+				opponentPlayer.elo,
+				currentPlayer.elo,
+				1,
+				32
+			);
+
+			await Promise.all([
+				User.updateOne(
+					{ _id: opponentPlayer.userId },
+					{
+						$inc: { "gameStats.won": 1 },
+						$set: { elo: Math.round(newRatingA) }
+					}
+				),
+				User.updateOne(
+					{ _id: currentPlayer.userId },
+					{
+						$inc: { "gameStats.lost": 1 },
+						$set: { elo: Math.round(newRatingB) }
+					}
+				)
+			]);
+		}
+	} catch (error) {
+		console.log(`Error checking timeout for room ${roomId}:`, error);
+	}
+};
+
 export const handlePlayBot = async ({ userId, socket }: BotGameProps) => {
 	try {
 		const user = await User.findById(userId);
@@ -375,7 +521,7 @@ export const handlePlayBot = async ({ userId, socket }: BotGameProps) => {
 			profilePic: user.profilePic,
 			gender: user.gender,
 			color: isUserWhite ? "w" : "b",
-		};
+		} as BotPlayerData;
 
 		const botRoom = {
 			roomId,

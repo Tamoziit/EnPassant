@@ -21,7 +21,7 @@ const PlayerCard = ({ username, elo, nationality, profilePic, gender }: PlayerDa
 	}, []);
 
 	return (
-		<div className="w-full bg-gray-700/70 p-3 flex items-center gap-2">
+		<div className="w-full py-3 flex items-center gap-2">
 			<Avatar className="size-12 lg:size-12">
 				<AvatarImage src={profileImage} />
 				<AvatarFallback>

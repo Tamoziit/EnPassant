@@ -51,6 +51,7 @@ export interface PlayerData {
     color: "w" | "b";
     profilePic?: string | null;
     gender: "M" | "F";
+    timeRemaining: number;
 }
 
 export interface RoomData {
@@ -59,13 +60,22 @@ export interface RoomData {
     player2: PlayerData;
     fen: string;
     moves: string[];
-    status: "ongoing" | "checkmate" | "draw" | "stalemate";
+    status: "ongoing" | "checkmate" | "draw" | "stalemate" | "timeout";
+    timeControl: {
+        initial: number;
+        increment: number;
+    };
+    lastMoveTimestamp: number;
 }
 
 export interface MoveProps {
     opponentFen: string;
     moves: string[];
     isCheck: boolean;
+    playerTimes: {
+        [userId: string]: number;
+    };
+    lastMoveTimestamp: number;
 }
 
 export interface ChessBoardProps {
@@ -87,7 +97,7 @@ export interface BotChessBoardProps {
 }
 
 export interface ResultProps {
-    status: "checkmate" | "draw" | "stalemate" | null;
+    status: "checkmate" | "draw" | "stalemate" | "timeout" | null;
     winner: string | null;
     message: string;
 }
@@ -105,7 +115,7 @@ export interface EvalBarProps {
 
 export interface ResultModalProps {
     roomData: RoomData;
-    status: "checkmate" | "draw" | "stalemate" | null;
+    status: "checkmate" | "draw" | "stalemate" | "timeout" | null;
     winner: string | null;
     message: string;
     setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -131,10 +141,19 @@ export interface CloudinarySignature {
     api_key: string;
 }
 
+export interface BotPlayerData {
+    userId: string;
+    username: string;
+    elo: number;
+    nationality: string;
+    color: "w" | "b";
+    profilePic?: string | null;
+    gender: "M" | "F";
+}
+
 export interface BotRoomData {
     roomId: string;
-    user: PlayerData;
-    player2: PlayerData;
+    user: BotPlayerData;
     fen: string;
     moves: string[];
     status: "ongoing" | "checkmate" | "draw" | "stalemate";
@@ -146,4 +165,12 @@ interface BotResultModalProps {
     winner: string | null;
     message?: string;
     setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export interface TimerProps {
+    initialTime: number;
+    isActive: boolean;
+    serverTime?: number;
+    lastMoveTimestamp?: number;
+    status: "checkmate" | "draw" | "stalemate" | "timeout" | null;
 }

@@ -14,6 +14,7 @@ import adminRoutes from './routes/admin.routes';
 import authRoutes from './routes/auth.routes';
 import profileRoutes from "./routes/profile.routes";
 import gameRoutes from "./routes/game.routes";
+import startTimeoutChecker from './utils/timeoutChecker';
 
 const PORT = process.env.PORT || 3000;
 
@@ -53,6 +54,9 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/profile', profileRoutes);
 app.use('/api/v1/game', gameRoutes);
+
+startTimeoutChecker();
+console.log("✅ Server-side timeout checker is running");
 
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on PORT: ${PORT}`);

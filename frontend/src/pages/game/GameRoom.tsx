@@ -14,6 +14,8 @@ import { GiSilverBullet } from "react-icons/gi";
 import { Button } from "@/components/ui/button";
 import { useSocketContext } from "@/context/SocketContext";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import type { TimeControls } from "@/types";
 
 const GameRoom = () => {
 	const { authUser } = useAuthContext();
@@ -22,6 +24,11 @@ const GameRoom = () => {
 	const { loading, getMyElo } = useGetMyElo();
 	const { socket } = useSocketContext();
 	const [searching, setSearching] = useState(false);
+	const [timeControls, setTimeControls] = useState<TimeControls>({
+		initial: 10,
+		increment: 0
+	});
+	const [selected, setSelected] = useState<"Rapid" | "Blitz" | "Bullet">("Rapid");
 	const navigate = useNavigate();
 
 	const getProfilePic = () => {
@@ -46,7 +53,6 @@ const GameRoom = () => {
 		}
 	}, [authUser]);
 
-	// Memoize the callback to prevent unnecessary re-renders
 	const handleMatchFound = useCallback((gameRoom: string) => {
 		setSearching(false);
 		navigate(`/game/${gameRoom}`);
@@ -55,13 +61,13 @@ const GameRoom = () => {
 	const handleSearchError = useCallback((error: string) => {
 		console.error("Search error:", error);
 		setSearching(false);
-		// You might want to show an error toast here
+		toast.error("Error while searching for an opponent!");
 	}, []);
 
 	const handleNoMatch = useCallback((message: string) => {
 		console.log("No match found:", message);
 		setSearching(false);
-		// You might want to show a message to the user
+		toast.error("Couldn't find an opponent!");
 	}, []);
 
 	useEffect(() => {
@@ -69,18 +75,15 @@ const GameRoom = () => {
 
 		console.log("Setting up socket listeners");
 
-		// Clean up any existing listeners to prevent duplicates
 		socket.off("matchFound");
 		socket.off("error");
 		socket.off("noMatchFound");
 
-		// Add event listeners
 		socket.on("matchFound", handleMatchFound);
 		socket.on("error", handleSearchError);
 		socket.on("noMatchFound", handleNoMatch);
 
 		return () => {
-			// Clean up listeners on unmount
 			socket.off("matchFound", handleMatchFound);
 			socket.off("error", handleSearchError);
 			socket.off("noMatchFound", handleNoMatch);
@@ -95,6 +98,8 @@ const GameRoom = () => {
 
 		socket.emit("joinRoom", {
 			userId: authUser._id,
+			timeControls: timeControls,
+			mode: selected
 		});
 	};
 
@@ -108,6 +113,14 @@ const GameRoom = () => {
 			userId: authUser?._id,
 		});
 	};
+
+	const setGameMode = (initial: number, increment: number, mode: "Rapid" | "Blitz" | "Bullet") => {
+		setTimeControls({
+			initial,
+			increment
+		});
+		setSelected(mode);
+	}
 
 	return (
 		<>
@@ -164,16 +177,29 @@ const GameRoom = () => {
 								<h1 className="text-gray-400 text-xl font-medium">Start a Game</h1>
 
 								<div className="flex gap-2">
-									<Badge className="text-base w-20 text-gray-300/70"><IoMdTime /> Rapid</Badge>
+									<Badge
+										onClick={() => setGameMode(10, 0, "Rapid")}
+										className={`text-base w-20 text-gray-300/70 cursor-pointer ${selected === "Rapid" ? 'ring-2 ring-gray-400' : ''}`}
+									>
+										<IoMdTime /> Rapid
+									</Badge>
 									<Separator orientation="vertical" className="mx-3" />
-									<Badge className="text-base w-20 text-gray-300/70"><AiFillThunderbolt /> Blitz</Badge>
+									<Badge
+										onClick={() => setGameMode(5, 1, "Blitz")}
+										className={`text-base w-20 text-gray-300/70 cursor-pointer ${selected === "Blitz" ? 'ring-2 ring-gray-400' : ''}`}>
+										<AiFillThunderbolt /> Blitz
+									</Badge>
 									<Separator orientation="vertical" className="mx-3" />
-									<Badge className="text-base w-20 text-gray-300/70"><GiSilverBullet /> Bullet</Badge>
+									<Badge
+										onClick={() => setGameMode(3, 2, "Bullet")}
+										className={`text-base w-20 text-gray-300/70 cursor-pointer ${selected === "Bullet" ? 'ring-2 ring-gray-400' : ''}`}>
+										<GiSilverBullet /> Bullet
+									</Badge>
 								</div>
 
 								<div className="flex items-center gap-1 text-gray-400/70 text-lg">
 									<IoMdTime />
-									<span>10 mins</span>
+									<span>{timeControls.initial} | {timeControls.increment}</span>
 								</div>
 
 								{!searching ? (
@@ -201,7 +227,7 @@ const GameRoom = () => {
 										<Button
 											variant="outline"
 											size="sm"
-											className="w-full text-sm"
+											className="w-full text-sm cursor-pointer"
 											onClick={handleCancelSearch}
 										>
 											Cancel Search

@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import User from "../models/user.model";
 import client from "../redis/client";
 import { io } from "../socket/socket";
-import { BotGameProps, BotPlayerData, BotRoomData, HandleBotMoveProps, HandleMoveProps, JoinRoomProps, PlayerData, RoomData } from "../types";
+import { BotGameProps, BotPlayerData, BotRoomData, HandleBotMoveProps, HandleMoveProps, JoinRoomProps, PlayerData, RoomData, SearchState } from "../types";
 import { Request, Response } from "express";
 import generateRoomId from "../utils/generateRoomId";
 import chess from "../services/chessEngine";
@@ -10,20 +10,16 @@ import evaluateFEN from "../services/stockfishEval";
 import updateElo from "../utils/updateElo";
 import getBestMove from "../services/getBestMove";
 import { Chess } from "chess.js";
+import { time } from "console";
 
 const MAX_ELO_DIFF = 100;
 const MAX_WAIT_TIME_MS = 30000;
 
-interface SearchState {
-	searchActive: boolean;
-	timeoutId: NodeJS.Timeout | null;
-}
-
 const activeSearches = new Map<Types.ObjectId, SearchState>();
 
-export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
+export const joinRoom = async ({ userId, timeControls, mode, socket }: JoinRoomProps) => {
 	try {
-		console.log("Searching for match...");
+		console.log(`Searching for match in ${mode} mode...`);
 
 		const user = await User.findById(userId);
 		if (!user) return socket.emit("error", "User not found");
@@ -34,82 +30,82 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 			elo: user.elo,
 			nationality: user.nationality,
 			profilePic: user.profilePic,
-			gender: user.gender
+			gender: user.gender,
+			mode
 		};
 
 		const userKey = JSON.stringify(userObj);
+		const matchSetKey = `REDIS_MATCH_SET:${mode}`;
 
 		// Checking if user is already searching
 		if (activeSearches.has(userId)) {
 			return socket.emit("error", "Already searching for a match");
 		}
 
-		const existingUser = await client.zscore("REDIS_MATCH_SET", userKey);
+		const existingUser = await client.zscore(matchSetKey, userKey);
 		if (existingUser !== null) {
 			return socket.emit("error", "Already searching for a match");
 		}
 
-		// Adding user to Redis sorted set
-		await client.zadd("REDIS_MATCH_SET", user.elo, userKey);
+		// Adding user to per-mode Redis set
+		await client.zadd(matchSetKey, user.elo, userKey);
 
-		const members = await client.zrange("REDIS_MATCH_SET", 0, -1, "WITHSCORES");
-		console.log("Current Redis Match Set members:", members.length / 2);
+		const members = await client.zrange(matchSetKey, 0, -1, "WITHSCORES");
+		console.log(`Current ${mode} queue size:`, members.length / 2);
 
-		// Initializing search state
-		const searchState = { searchActive: true, timeoutId: null };
+		// Initialize search state
+		const searchState = {
+			searchActive: true,
+			timeoutId: null,
+			mode
+		};
 		activeSearches.set(userId, searchState);
 
 		const startTime = Date.now();
 
 		const tryFindMatch = async (): Promise<void> => {
 			try {
-				// Checking if this user's search is still active
 				let searchState = activeSearches.get(userId);
-				if (!searchState || !searchState.searchActive) {
-					return; // Search was cancelled or completed
-				}
+				if (!searchState || !searchState.searchActive) return;
 
 				const minElo = user.elo - MAX_ELO_DIFF;
 				const maxElo = user.elo + MAX_ELO_DIFF;
 
-				const candidates = await client.zrangebyscore("REDIS_MATCH_SET", minElo, maxElo);
+				// Only searching in this mode’s Redis set
+				const candidates = await client.zrangebyscore(matchSetKey, minElo, maxElo);
 
 				for (const candidateStr of candidates) {
-					// Re-checking search state before processing each candidate
 					searchState = activeSearches.get(userId);
-					if (!searchState || !searchState.searchActive) {
-						return;
-					}
+					if (!searchState || !searchState.searchActive) return;
 
 					const candidate = JSON.parse(candidateStr);
-					if (candidate.userId === userObj.userId) continue; // skip self
+					if (candidate.userId === userObj.userId) continue;
+					if (candidate.mode !== mode) continue;
 
-					// Getting candidate's socket ID from Redis
 					const candidateSocketId = await client.hget("player_sockets", candidate.userId);
-
 					if (!candidateSocketId) {
-						// Candidate is offline, removing them and continue searching
-						await client.zrem("REDIS_MATCH_SET", candidateStr);
+						await client.zrem(matchSetKey, candidateStr);
 						console.log(`Removed offline candidate: ${candidate.username}`);
 						continue;
 					}
 
-					// MATCH FOUND - Canceling both users' searches immediately
+					// Match found
 					cancelSearch(userId);
 					cancelSearch(candidate.userId);
-					await client.zrem("REDIS_MATCH_SET", userKey, candidateStr);
+					await client.zrem(matchSetKey, userKey, candidateStr);
 
 					const userIsPlayer1 = Math.random() < 0.5;
 					const player1 = {
 						...(userIsPlayer1 ? userObj : candidate),
 						color: "w",
-						timeRemaining: 1 * 60 * 1000
+						timeRemaining: timeControls.initial * 60 * 1000
 					} as PlayerData;
 					const player2 = {
 						...(userIsPlayer1 ? candidate : userObj),
 						color: "b",
-						timeRemaining: 1 * 60 * 1000
+						timeRemaining: timeControls.initial * 60 * 1000
 					} as PlayerData;
+
 					const roomId = `GM-${generateRoomId()}`;
 
 					const gameRoom = {
@@ -120,22 +116,22 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 						moves: [],
 						status: "ongoing",
 						timeControl: {
-							initial: 1 * 60 * 1000,
-							increment: 0
+							initial: timeControls.initial * 60 * 1000,
+							increment: timeControls.increment * 1000
 						},
-						lastMoveTimestamp: Date.now()
+						lastMoveTimestamp: Date.now(),
+						mode
 					} as RoomData;
 
-					// Persisting room in Redis
+					// Persisting room
 					await client.set(`ROOM:${roomId}`, JSON.stringify(gameRoom));
-					await client.expire(`ROOM:${roomId}`, 86400); // 24 hrs
-					await client.sadd("ACTIVE_GAMES", roomId); // active rooms for time sync
+					await client.expire(`ROOM:${roomId}`, 86400);
+					await client.sadd("ACTIVE_GAMES", roomId);
 
-					console.log(`Match found! Room: ${roomId}`);
+					console.log(`Match found in ${mode}! Room: ${roomId}`);
 					console.log(`Player1: ${player1.username} (${player1.color})`);
 					console.log(`Player2: ${player2.username} (${player2.color})`);
 
-					// Sending match found event to both players
 					socket.emit("matchFound", gameRoom.roomId);
 					io.to(candidateSocketId).emit("matchFound", gameRoom.roomId);
 
@@ -153,6 +149,7 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 						stalemate: 0
 					};
 					user.gameStats.played += 1;
+
 					opponent.gameStats = opponent.gameStats ?? {
 						played: 0,
 						won: 0,
@@ -166,23 +163,21 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 					return;
 				}
 
-				// No suitable candidates found, continuing search if still active and within time limit
+				// No match yet — retrying if within wait time
 				searchState = activeSearches.get(userId);
 				if (searchState && searchState.searchActive && Date.now() - startTime < MAX_WAIT_TIME_MS) {
-					// Scheduling next search attempt
 					const timeoutId = setTimeout(tryFindMatch, 1000);
 					searchState.timeoutId = timeoutId;
 				} else if (searchState && searchState.searchActive) {
-					// Timeout reached
 					cancelSearch(userId);
-					await client.zrem("REDIS_MATCH_SET", userKey);
+					await client.zrem(matchSetKey, userKey);
 					socket.emit("noMatchFound", "No suitable opponent found. Try again later.");
-					console.log(`Search timeout for user: ${user.username}`);
+					console.log(`Search timeout for user: ${user.username} in ${mode}`);
 				}
 			} catch (error) {
 				console.error("Error in tryFindMatch:", error);
 				cancelSearch(userId);
-				await client.zrem("REDIS_MATCH_SET", userKey);
+				await client.zrem(matchSetKey, userKey);
 				socket.emit("error", "Error occurred while searching for match.");
 			}
 		};
@@ -190,6 +185,7 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 		socket.on("disconnect", () => {
 			console.log(`User ${userId} disconnected, cancelling search`);
 			cancelSearch(userId);
+			client.zrem(matchSetKey, userKey);
 		});
 
 		tryFindMatch();
@@ -201,16 +197,27 @@ export const joinRoom = async ({ userId, socket }: JoinRoomProps) => {
 };
 
 // Helper function to cancel a user's search
-const cancelSearch = (userId: Types.ObjectId): void => {
+export const cancelSearch = async (userId: Types.ObjectId): Promise<void> => {
 	const searchState = activeSearches.get(userId);
-	if (searchState) {
-		searchState.searchActive = false;
-		if (searchState.timeoutId) {
-			clearTimeout(searchState.timeoutId);
+	if (!searchState) return;
+
+	searchState.searchActive = false;
+	if (searchState.timeoutId) clearTimeout(searchState.timeoutId);
+
+	const matchSetKey = `REDIS_MATCH_SET:${searchState.mode}`;
+	const members = await client.zrange(matchSetKey, 0, -1);
+
+	for (const memberStr of members) {
+		const member = JSON.parse(memberStr);
+		if (member.userId === userId.toString()) {
+			await client.zrem(matchSetKey, memberStr);
+			console.log(`Removed user ${userId} from ${searchState.mode} queue`);
+			break;
 		}
-		activeSearches.delete(userId);
-		console.log(`Search cancelled for user: ${userId}`);
 	}
+
+	activeSearches.delete(userId);
+	console.log(`Search cancelled for user: ${userId}`);
 };
 
 export const getRoomData = async (req: Request, res: Response) => {

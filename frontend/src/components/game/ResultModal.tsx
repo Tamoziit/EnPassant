@@ -13,7 +13,7 @@ const ResultModal = ({ roomData, status, winner, message, setShowModal }: Result
 
 	let leftPlayer, rightPlayer, leftColor;
 
-	if (status === "checkmate" && winner) {
+	if (status === "checkmate" || status === "timeout" && winner) {
 		const winningPlayer = player1.userId === winner ? player1 : player2;
 		const losingPlayer = player1.userId === winner ? player2 : player1;
 		leftPlayer = winningPlayer;
@@ -33,9 +33,9 @@ const ResultModal = ({ roomData, status, winner, message, setShowModal }: Result
 	return (
 		<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
 			<div className="bg-gray-800 border border-gray-600 rounded-lg shadow-2xl p-8 max-w-md w-full mx-4 relative">
-				{status === "checkmate" && (
+				{status === "checkmate" || status === "timeout" && (
 					<h1 className="text-3xl font-semibold text-center text-gray-300 mt-3">
-						<span className="uppercase">{leftColor}</span> Won by Checkmate!
+						<span className="uppercase">{leftColor}</span> Won by {status.toLocaleUpperCase()}!
 					</h1>
 				)}
 

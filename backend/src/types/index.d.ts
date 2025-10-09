@@ -47,6 +47,12 @@ declare module "express" {
     }
 }
 
+interface SearchState {
+    searchActive: boolean;
+    timeoutId: NodeJS.Timeout | null;
+    mode: "Rapid" | "Blitz" | "Bullet";
+}
+
 export interface PlayerData {
     userId: string;
     username: string;
@@ -56,6 +62,7 @@ export interface PlayerData {
     profilePic?: string | null;
     gender: "M" | "F";
     timeRemaining: number;
+    mode: "Rapid" | "Blitz" | "Bullet";
 }
 
 export interface RoomData {
@@ -74,6 +81,11 @@ export interface RoomData {
 
 export interface JoinRoomProps {
     userId: Types.ObjectId;
+    timeControls: {
+        initial: number;
+        increment: number;
+    };
+    mode: "Rapid" | "Blitz" | "Bullet";
     socket: Socket;
 }
 

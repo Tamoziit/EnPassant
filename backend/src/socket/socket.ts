@@ -2,7 +2,7 @@ import { Server } from "socket.io";
 import http from "http";
 import express from "express";
 import client from "../redis/client";
-import { cleanupStates, handleBotMove, handleMove, handlePlayBot, joinRoom } from "../controllers/game.controller";
+import { cancelSearch, cleanupStates, handleBotMove, handleMove, handlePlayBot, joinRoom } from "../controllers/game.controller";
 import User from "../models/user.model";
 
 const baseUrl = process.env.BASE_URL!;
@@ -37,8 +37,14 @@ io.on("connection", async (socket) => {
         console.log(`User ${data.userId} requesting to join game room`);
         joinRoom({
             userId: data.userId,
+            timeControls: data.timeControls,
+            mode: data.mode,
             socket: socket
         });
+    });
+
+    socket.on("cancelSearch", (data) => {
+        cancelSearch(data.userId)
     });
 
     socket.on("handleMove", (data) => {

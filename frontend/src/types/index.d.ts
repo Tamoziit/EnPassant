@@ -68,6 +68,11 @@ export interface RoomData {
     lastMoveTimestamp: number;
 }
 
+export interface TimeControls {
+    initial: number;
+    increment: number;
+};
+
 export interface MoveProps {
     opponentFen: string;
     moves: string[];

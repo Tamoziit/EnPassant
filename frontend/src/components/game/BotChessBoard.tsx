@@ -1,4 +1,4 @@
-import type { BotChessBoardProps, MoveProps, ResultProps } from "@/types";
+import type { BotChessBoardProps, BotResultProps, MoveProps } from "@/types";
 import getOpeningByFEN from "@/utils/getOpeningByFEN";
 import { Chess } from "chess.js";
 import { useEffect, useRef, useState } from "react";
@@ -13,7 +13,7 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 	const chessRef = useRef(new Chess());
 	const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	const [showModal, setShowModal] = useState(false);
-	const [result, setResult] = useState<ResultProps>({
+	const [result, setResult] = useState<BotResultProps>({
 		status: null,
 		winner: null,
 		message: ""
@@ -152,7 +152,7 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 	useEffect(() => {
 		if (!socket) return;
 
-		const gameResult = ({ status, winner, message }: ResultProps) => {
+		const gameResult = ({ status, winner, message }: BotResultProps) => {
 			setResult({ status, winner, message });
 			setShowModal(true);
 		}
@@ -185,7 +185,9 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 					/>
 				</div>
 
-				<PlayerCard {...botRoomData.user} />
+				<div className="flex bg-gray-700/70 items-center justify-between w-full px-4">
+					<PlayerCard {...botRoomData.user} />
+				</div>
 
 				{result && showModal && (
 					<BotResultModal

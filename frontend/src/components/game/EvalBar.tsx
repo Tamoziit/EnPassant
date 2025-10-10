@@ -6,7 +6,7 @@ const mapEvalToPercentage = (score: number): number => {
     return Math.max(1, Math.min(99, Math.round(scaled))); // keeping within [1%, 99%]
 };
 
-const EvalBar = ({ evalScore, turn, colour }: EvalBarProps) => {
+const EvalBar = ({ evalScore, turn, colour, isEnabled }: EvalBarProps) => {
     let percentage = 50;
     let displayText = "";
     let isWhiteText = false;
@@ -34,7 +34,7 @@ const EvalBar = ({ evalScore, turn, colour }: EvalBarProps) => {
     }
 
     return (
-        <div className={`relative flex flex-col items-center w-10 h-[580px] lg:h-[610px] rounded bg-neutral-400 overflow-hidden border border-gray-700 shadow-inner ${colour === "w" ? "rotate-180" : ""}`}>
+        <div className={`${isEnabled ? 'flex' : 'hidden'} relative flex-col items-center w-10 h-[580px] lg:h-[610px] rounded bg-neutral-400 overflow-hidden border border-gray-700 shadow-inner ${colour === "w" ? "rotate-180" : ""}`}>
             <div
                 className="w-full bg-white transition-all duration-300"
                 style={{ height: `${percentage}%` }}

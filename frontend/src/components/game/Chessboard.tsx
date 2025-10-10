@@ -1,4 +1,4 @@
-import type { ChessBoardProps, MoveProps, ResultProps } from "@/types";
+import type { ChessBoardProps, MaterialInfo, MoveProps, ResultProps } from "@/types";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import PlayerCard from "../PlayerCard";
@@ -8,13 +8,14 @@ import ResultModal from "./ResultModal";
 import getOpeningByFEN from "@/utils/getOpeningByFEN";
 import Opening from "./Opening";
 import Timer from "./Timer";
+import Material from "./MaterialInfo";
 
 const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }: ChessBoardProps) => {
 	const chessRef = useRef(new Chess());
 	const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	const [playerTimes, setPlayerTimes] = useState({
-		[roomData.player1.userId]: roomData.player1.timeRemaining,
-		[roomData.player2.userId]: roomData.player2.timeRemaining
+		[roomData.player1.userId]: roomData.player1.timeRemaining!,
+		[roomData.player2.userId]: roomData.player2.timeRemaining!
 	});
 	const [lastMoveTimestamp, setLastMoveTimestamp] = useState(roomData.lastMoveTimestamp || Date.now());
 	const [showModal, setShowModal] = useState(false);
@@ -23,6 +24,7 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 		winner: null,
 		message: ""
 	});
+	const [materialInfo, setMaterialInfo] = useState<MaterialInfo>(roomData.materialInfo);
 	const [opening, setOpening] = useState<string>("");
 
 	useEffect(() => {
@@ -164,11 +166,22 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 		}
 	}, [socket]);
 
-	console.log(roomData);
-	console.log(fen);
-	console.log(moves);
-	console.log(result);
-	console.log(opening);
+	// Material Info
+	useEffect(() => {
+		if (!socket) return;
+
+		const getMaterialInfo = (materialInfo: MaterialInfo) => {
+			setMaterialInfo(materialInfo);
+		}
+
+		socket.on("materialInfo", getMaterialInfo);
+
+		return () => {
+			socket.off("materialInfo", getMaterialInfo);
+		}
+	}, [socket]);
+
+	console.log(materialInfo);
 
 	const isPlayer1 = authUser._id === roomData.player1.userId;
 	const me = isPlayer1 ? roomData.player1 : roomData.player2;
@@ -180,7 +193,7 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 		<div className="flex w-2/3 lg:w-[500px] flex-col gap-1">
 			<div className="flex flex-col w-full items-center justify-center rounded-lg overflow-hidden">
 				<div className="flex bg-gray-700/70 items-center justify-between w-full px-4">
-					<PlayerCard {...opponent} />
+					<PlayerCard {...opponent} materialInfo={materialInfo} />
 					<Timer
 						initialTime={playerTimes[opponent.userId]}
 						isActive={!isMyTurn && roomData.status === "ongoing"}
@@ -207,7 +220,7 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 				</div>
 
 				<div className="flex bg-gray-700/70 items-center justify-between w-full px-4">
-					<PlayerCard {...me} />
+					<PlayerCard {...me} materialInfo={materialInfo} />
 					<Timer
 						initialTime={playerTimes[me.userId]}
 						isActive={isMyTurn && roomData.status === "ongoing"}

@@ -65,6 +65,24 @@ export interface PlayerData {
     mode: "Rapid" | "Blitz" | "Bullet";
 }
 
+export interface MaterialInfo {
+    capturedByWhite: {
+        p: number;
+        n: number;
+        b: number;
+        r: number;
+        q: number;
+    };
+    capturedByBlack: {
+        p: number;
+        n: number;
+        b: number;
+        r: number;
+        q: number;
+    };
+    materialAdvantage: number;
+}
+
 export interface RoomData {
     roomId: string;
     player1: PlayerData;
@@ -77,6 +95,8 @@ export interface RoomData {
         increment: number;
     };
     lastMoveTimestamp: number;
+    materialInfo: MaterialInfo;
+    mode: "Rapid" | "Blitz" | "Bullet";
 }
 
 export interface JoinRoomProps {

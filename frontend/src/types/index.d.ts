@@ -51,7 +51,26 @@ export interface PlayerData {
     color: "w" | "b";
     profilePic?: string | null;
     gender: "M" | "F";
-    timeRemaining: number;
+    timeRemaining?: number;
+    mode?: "Rapid" | "Blitz" | "Bullet";
+}
+
+export interface MaterialInfo {
+    capturedByWhite: {
+        p: number;
+        n: number;
+        b: number;
+        r: number;
+        q: number;
+    };
+    capturedByBlack: {
+        p: number;
+        n: number;
+        b: number;
+        r: number;
+        q: number;
+    };
+    materialAdvantage: number;
 }
 
 export interface RoomData {
@@ -66,6 +85,8 @@ export interface RoomData {
         increment: number;
     };
     lastMoveTimestamp: number;
+    materialInfo: MaterialInfo;
+    mode: "Rapid" | "Blitz" | "Bullet";
 }
 
 export interface TimeControls {
@@ -92,6 +113,17 @@ export interface ChessBoardProps {
     authUser: AuthUser;
 }
 
+export interface PlayerCardProps {
+    userId: string;
+    username: string;
+    elo: number;
+    nationality: string;
+    profilePic?: string | null;
+    gender: "M" | "F";
+    color: "w" | "b";
+    materialInfo: MaterialInfo;
+}
+
 export interface BotChessBoardProps {
     botRoomData: BotRoomData;
     moves: string[];
@@ -116,6 +148,7 @@ export interface EvalBarProps {
     evalScore: number | string;
     turn: 'w' | 'b';
     colour: "w" | "b";
+    isEnabled: boolean;
 };
 
 export interface ResultModalProps {
@@ -162,6 +195,12 @@ export interface BotRoomData {
     fen: string;
     moves: string[];
     status: "ongoing" | "checkmate" | "draw" | "stalemate";
+}
+
+export interface BotResultProps {
+    status: "checkmate" | "draw" | "stalemate" | null;
+    winner: string | null;
+    message: string;
 }
 
 interface BotResultModalProps {

@@ -11,6 +11,7 @@ import updateElo from "../utils/updateElo";
 import getBestMove from "../services/getBestMove";
 import { Chess } from "chess.js";
 import { time } from "console";
+import getMaterialInfo from "../utils/materialInfo";
 
 const MAX_ELO_DIFF = 100;
 const MAX_WAIT_TIME_MS = 30000;
@@ -107,6 +108,11 @@ export const joinRoom = async ({ userId, timeControls, mode, socket }: JoinRoomP
 					} as PlayerData;
 
 					const roomId = `GM-${generateRoomId()}`;
+					const materialInfo = {
+						"capturedByWhite": { "p": 0, "n": 0, "b": 0, "r": 0, "q": 0 },
+						"capturedByBlack": { "p": 0, "n": 0, "b": 0, "r": 0, "q": 0 },
+						"materialAdvantage": 0
+					}
 
 					const gameRoom = {
 						roomId,
@@ -120,6 +126,7 @@ export const joinRoom = async ({ userId, timeControls, mode, socket }: JoinRoomP
 							increment: timeControls.increment * 1000
 						},
 						lastMoveTimestamp: Date.now(),
+						materialInfo,
 						mode
 					} as RoomData;
 
@@ -324,6 +331,13 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 			chess.move(m);
 		}
 
+		const { capturedByWhite, capturedByBlack, materialAdvantage } = getMaterialInfo(chess);
+		room.materialInfo = {
+			capturedByWhite,
+			capturedByBlack,
+			materialAdvantage
+		};
+
 		const isCheck = chess.inCheck();
 		let gameEnded = false;
 		let message = "";
@@ -362,6 +376,9 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 			},
 			lastMoveTimestamp: room.lastMoveTimestamp
 		});
+
+		io.to(opponentSocketId).emit("materialInfo", room.materialInfo);
+		socket.emit("materialInfo", room.materialInfo);
 
 		if (gameEnded) {
 			await client.srem("ACTIVE_GAMES", roomId);

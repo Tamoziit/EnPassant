@@ -1,9 +1,10 @@
-import type { PlayerData } from "@/types";
+import type { PlayerCardProps } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useEffect, useState } from "react";
 import ReactCountryFlag from "react-country-flag";
+import Material from "./game/MaterialInfo";
 
-const PlayerCard = ({ username, elo, nationality, profilePic, gender }: PlayerData) => {
+const PlayerCard = ({ username, elo, nationality, profilePic, gender, color, materialInfo }: PlayerCardProps) => {
 	const [profileImage, setProfileImage] = useState(profilePic || "");
 
 	const getProfilePic = () => {
@@ -44,6 +45,10 @@ const PlayerCard = ({ username, elo, nationality, profilePic, gender }: PlayerDa
 						style={{ width: '1.2em', height: '1.2em' }}
 						title={nationality}
 					/>
+
+					<div className="ml-2">
+						<Material materialInfo={materialInfo} color={color} />
+					</div>
 				</div>
 			</div>
 		</div>

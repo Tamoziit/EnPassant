@@ -3,6 +3,8 @@ import EvalBar from "@/components/game/EvalBar";
 import MoveHistory from "@/components/game/MoveHistory";
 import GameLoader from "@/components/GameLoader";
 import AppNavbar from "@/components/navbars/AppNavbar";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useAuthContext } from "@/context/AuthContext";
 import { useSocketContext } from "@/context/SocketContext";
 import useGetBotRoomData from "@/hooks/useGetBotRoomData";
@@ -24,6 +26,7 @@ const BotGame = () => {
 		turn: 'w'
 	});
 	const [colour, setColour] = useState<"w" | "b">("w");
+	const [isEvalActive, setIsEvalActive] = useState<boolean>(true);
 
 	const fetchRoomData = async () => {
 		if (roomId) {
@@ -63,25 +66,40 @@ const BotGame = () => {
 		<>
 			<AppNavbar />
 
-			<div className="flex gap-6 items-center justify-center px-6 pt-20 pb-10 w-full">
-				<EvalBar
-					evalScore={evalScore.score}
-					turn={evalScore.turn}
-					colour={colour}
-				/>
+			<div className="flex flex-col items-center justify-center px-6 pt-20 w-full">
+				<div className="w-full flex gap-2 items-center justify-end">
+					<Label htmlFor="evalBar" className="text-sm text-gray-400 font-medium">
+						{isEvalActive ? "Disable Eval Bar" : "Enable Eval Bar"}
+					</Label>
+					<Switch
+						id="evalBar"
+						checked={isEvalActive}
+						onCheckedChange={setIsEvalActive}
+						className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300 cursor-pointer"
+					/>
+				</div>
 
-				<BotChessBoard
-					botRoomData={botRoomData}
-					moves={moves}
-					setMoves={setMoves}
-					colour={colour}
-					socket={socket}
-					authUser={authUser}
-				/>
+				<div className="flex gap-6 items-center justify-center w-full">
+					<EvalBar
+						evalScore={evalScore.score}
+						turn={evalScore.turn}
+						colour={colour}
+						isEnabled={isEvalActive}
+					/>
 
-				<MoveHistory
-					moves={moves}
-				/>
+					<BotChessBoard
+						botRoomData={botRoomData}
+						moves={moves}
+						setMoves={setMoves}
+						colour={colour}
+						socket={socket}
+						authUser={authUser}
+					/>
+
+					<MoveHistory
+						moves={moves}
+					/>
+				</div>
 			</div>
 		</>
 	)

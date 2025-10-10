@@ -2,8 +2,9 @@ import { Server } from "socket.io";
 import http from "http";
 import express from "express";
 import client from "../redis/client";
-import { cancelSearch, cleanupStates, handleBotMove, handleMove, handlePlayBot, joinRoom } from "../controllers/game.controller";
+import { cancelSearch, cleanupStates, handleMove, joinRoom } from "../controllers/game.controller";
 import User from "../models/user.model";
+import { handleBotMove, handlePlayBot } from "../controllers/botGame.controller";
 
 const baseUrl = process.env.BASE_URL!;
 const app = express();

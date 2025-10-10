@@ -97,7 +97,7 @@ const BotResultModal = ({ botRoomData, status, winner, message, setShowModal }: 
 				<Button
 					className="w-full mt-5 text-xl cursor-pointer"
 					size="md"
-					onClick={() => navigate("/game-room")}
+					onClick={() => navigate("/bot-room")}
 				>
 					New Game
 				</Button>

@@ -53,8 +53,8 @@ const PlayBots = () => {
 						/>
 
 						<div className="flex flex-col items-center justify-center">
-							<span className="text-gray-300 text-xl font-medium">Sorcerer Supreme</span>
-							<span className="text-gray-500 font-medium -mt-1">3000</span>
+							<span className="text-gray-300 text-xl font-medium text-center">Sorcerer Supreme</span>
+							<span className="text-gray-500 font-medium -mt-1 text-center">3000</span>
 						</div>
 
 						<Button

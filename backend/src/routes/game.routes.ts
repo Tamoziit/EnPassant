@@ -1,6 +1,7 @@
 import express from "express";
-import { getBotRoomData, getRoomData } from "../controllers/game.controller";
+import { getRoomData } from "../controllers/game.controller";
 import verifyToken from "../middlewares/auth.middleware";
+import { getBotRoomData } from "../controllers/botGame.controller";
 
 const router = express.Router();
 

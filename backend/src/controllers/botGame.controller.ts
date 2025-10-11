@@ -6,6 +6,7 @@ import { BotGameProps, BotPlayerData, BotRoomData, HandleBotMoveProps } from "..
 import generateRoomId from "../utils/generateRoomId";
 import evaluateFEN from "../services/stockfishEval";
 import getBestMove from "../services/getBestMove";
+import getMaterialInfo from "../utils/materialInfo";
 
 export const handlePlayBot = async ({ userId, socket }: BotGameProps) => {
     try {
@@ -28,12 +29,19 @@ export const handlePlayBot = async ({ userId, socket }: BotGameProps) => {
             color: isUserWhite ? "w" : "b",
         } as BotPlayerData;
 
+        const materialInfo = {
+            "capturedByWhite": { "p": 0, "n": 0, "b": 0, "r": 0, "q": 0 },
+            "capturedByBlack": { "p": 0, "n": 0, "b": 0, "r": 0, "q": 0 },
+            "materialAdvantage": 0
+        }
+
         const botRoom = {
             roomId,
             user: userObj,
             fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
             moves: [],
-            status: "ongoing"
+            status: "ongoing",
+            materialInfo
         } as BotRoomData
 
         await client.set(`BOT:${roomId}`, JSON.stringify(botRoom));
@@ -68,7 +76,16 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
         chess.load(fen);
         const gameEval1 = await evaluateFEN(fen);
 
+        let capturedByWhite, capturedByBlack, materialAdvantage;
+        ({ capturedByWhite, capturedByBlack, materialAdvantage } = getMaterialInfo(chess));
+        room.materialInfo = {
+            capturedByWhite,
+            capturedByBlack,
+            materialAdvantage
+        };
+
         socket.emit("botGameEval", gameEval1);
+        socket.emit("botMaterialInfo", room.materialInfo);
 
         const { from, to, promotion } = await getBestMove(fen);
 
@@ -99,6 +116,12 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
         for (const m of room.moves) {
             chess.move(m);
         }
+        ({ capturedByWhite, capturedByBlack, materialAdvantage } = getMaterialInfo(chess));
+        room.materialInfo = {
+            capturedByWhite,
+            capturedByBlack,
+            materialAdvantage
+        };
 
         const isCheck = chess.inCheck();
         let gameEnded = false;
@@ -133,6 +156,7 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
             moves: room.moves,
             isCheck
         });
+        socket.emit("botMaterialInfo", room.materialInfo);
 
         if (gameEnded) {
             const statusPayload = {

@@ -1,4 +1,4 @@
-import type { BotChessBoardProps, BotResultProps, MoveProps } from "@/types";
+import type { BotChessBoardProps, BotResultProps, MaterialInfo, MoveProps } from "@/types";
 import getOpeningByFEN from "@/utils/getOpeningByFEN";
 import { Chess } from "chess.js";
 import { useEffect, useRef, useState } from "react";
@@ -18,6 +18,7 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 		winner: null,
 		message: ""
 	});
+	const [materialInfo, setMaterialInfo] = useState<MaterialInfo>(botRoomData.materialInfo);
 	const [opening, setOpening] = useState<string>("");
 
 	useEffect(() => {
@@ -120,6 +121,20 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 		}
 	}, [socket, botRoomData, authUser]);
 
+	// Material Info
+	useEffect(() => {
+		if (!socket) return;
+
+		const getMaterialInfo = (materialInfo: MaterialInfo) => {
+			setMaterialInfo(materialInfo);
+		}
+
+		socket.on("botMaterialInfo", getMaterialInfo);
+
+		return () => {
+			socket.off("botMaterialInfo", getMaterialInfo);
+		}
+	}, [socket]);
 
 	// Error handlers
 	useEffect(() => {
@@ -167,7 +182,7 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 	return (
 		<div className="flex w-2/3 lg:w-[500px] flex-col gap-1">
 			<div className="flex flex-col w-full items-center justify-center rounded-lg overflow-hidden">
-				<BotCard />
+				<BotCard materialInfo={materialInfo} color={botRoomData.user.color === "w" ? "b" : "w"} />
 
 				<div className="aspect-square">
 					<Chessboard
@@ -186,7 +201,7 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 				</div>
 
 				<div className="flex bg-gray-700/70 items-center justify-between w-full px-4">
-					<PlayerCard {...botRoomData.user} />
+					<PlayerCard {...botRoomData.user} materialInfo={materialInfo} />
 				</div>
 
 				{result && showModal && (

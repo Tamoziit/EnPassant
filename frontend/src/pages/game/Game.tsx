@@ -91,8 +91,6 @@ const Game = () => {
 
 					<ChessBoard
 						roomData={roomData}
-						setRoomData={setRoomData}
-						moves={moves}
 						setMoves={setMoves}
 						socket={socket}
 						authUser={authUser}

@@ -8,9 +8,8 @@ import ResultModal from "./ResultModal";
 import getOpeningByFEN from "@/utils/getOpeningByFEN";
 import Opening from "./Opening";
 import Timer from "./Timer";
-import Material from "./MaterialInfo";
 
-const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }: ChessBoardProps) => {
+const ChessBoard = ({ roomData, setMoves, socket, authUser }: ChessBoardProps) => {
 	const chessRef = useRef(new Chess());
 	const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	const [playerTimes, setPlayerTimes] = useState({
@@ -116,6 +115,21 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 			socket.off("handleMove", handleOpponentMove);
 		};
 	}, [roomData, authUser, socket]);
+	
+	// Material Info
+	useEffect(() => {
+		if (!socket) return;
+
+		const getMaterialInfo = (materialInfo: MaterialInfo) => {
+			setMaterialInfo(materialInfo);
+		}
+
+		socket.on("materialInfo", getMaterialInfo);
+
+		return () => {
+			socket.off("materialInfo", getMaterialInfo);
+		}
+	}, [socket]);
 
 	// Error handlers
 	useEffect(() => {
@@ -165,23 +179,6 @@ const ChessBoard = ({ roomData, setRoomData, moves, setMoves, socket, authUser }
 			socket.off("gameEnd", gameResult);
 		}
 	}, [socket]);
-
-	// Material Info
-	useEffect(() => {
-		if (!socket) return;
-
-		const getMaterialInfo = (materialInfo: MaterialInfo) => {
-			setMaterialInfo(materialInfo);
-		}
-
-		socket.on("materialInfo", getMaterialInfo);
-
-		return () => {
-			socket.off("materialInfo", getMaterialInfo);
-		}
-	}, [socket]);
-
-	console.log(materialInfo);
 
 	const isPlayer1 = authUser._id === roomData.player1.userId;
 	const me = isPlayer1 ? roomData.player1 : roomData.player2;

@@ -146,4 +146,5 @@ export interface BotRoomData {
     fen: string;
     moves: string[];
     status: "ongoing" | "checkmate" | "draw" | "stalemate";
+    materialInfo: MaterialInfo
 }

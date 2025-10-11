@@ -106,8 +106,6 @@ export interface MoveProps {
 
 export interface ChessBoardProps {
     roomData: RoomData;
-    setRoomData: React.Dispatch<React.SetStateAction<RoomData | null>>;
-    moves: string[];
     setMoves: React.Dispatch<React.SetStateAction<string[]>>;
     socket: Socket;
     authUser: AuthUser;
@@ -195,6 +193,12 @@ export interface BotRoomData {
     fen: string;
     moves: string[];
     status: "ongoing" | "checkmate" | "draw" | "stalemate";
+    materialInfo: MaterialInfo;
+}
+
+export interface BotCardProps {
+    materialInfo: MaterialInfo;
+    color: "b" | "w";
 }
 
 export interface BotResultProps {

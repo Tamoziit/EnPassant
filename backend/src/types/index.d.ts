@@ -125,9 +125,25 @@ export interface HandleBotMoveProps {
     socket: Socket;
 }
 
+export interface Bot {
+    id: string;
+    name: string;
+    elo: number;
+    image: string;
+}
+
 export interface BotGameProps {
+    botObj: Bot;
     userId: Types.ObjectId;
     socket: Socket;
+}
+
+export interface BotData {
+    id: string;
+    name: string;
+    elo: number;
+    image: string;
+    color: "w" | "b";
 }
 
 export interface BotPlayerData {
@@ -142,6 +158,7 @@ export interface BotPlayerData {
 
 export interface BotRoomData {
     roomId: string;
+    bot: BotData;
     user: BotPlayerData;
     fen: string;
     moves: string[];

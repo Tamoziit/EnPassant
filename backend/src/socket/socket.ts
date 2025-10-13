@@ -60,6 +60,7 @@ io.on("connection", async (socket) => {
 
     socket.on("playBot", (data) => {
         handlePlayBot({
+            botObj: data.botObj,
             userId: data.userId,
             socket: socket
         });

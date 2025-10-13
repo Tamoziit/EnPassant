@@ -5,10 +5,10 @@ import client from "../redis/client";
 import { BotGameProps, BotPlayerData, BotRoomData, HandleBotMoveProps } from "../types";
 import generateRoomId from "../utils/generateRoomId";
 import evaluateFEN from "../services/stockfishEval";
-import getBestMove from "../services/getBestMove";
 import getMaterialInfo from "../utils/materialInfo";
+import { bots } from "../data/bots";
 
-export const handlePlayBot = async ({ userId, socket }: BotGameProps) => {
+export const handlePlayBot = async ({ botObj, userId, socket }: BotGameProps) => {
     try {
         const user = await User.findById(userId);
         if (!user) {
@@ -28,6 +28,10 @@ export const handlePlayBot = async ({ userId, socket }: BotGameProps) => {
             gender: user.gender,
             color: isUserWhite ? "w" : "b",
         } as BotPlayerData;
+        const bot = {
+            ...(botObj),
+            color: isUserWhite ? "b" : "w"
+        }
 
         const materialInfo = {
             "capturedByWhite": { "p": 0, "n": 0, "b": 0, "r": 0, "q": 0 },
@@ -38,6 +42,7 @@ export const handlePlayBot = async ({ userId, socket }: BotGameProps) => {
         const botRoom = {
             roomId,
             user: userObj,
+            bot,
             fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
             moves: [],
             status: "ongoing",
@@ -73,9 +78,9 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
 
         room.moves = moves;
         const chess = new Chess();
-        chess.load(fen);
-        const gameEval1 = await evaluateFEN(fen);
-
+        for (const m of room.moves) {
+            chess.move(m);
+        }
         let capturedByWhite, capturedByBlack, materialAdvantage;
         ({ capturedByWhite, capturedByBlack, materialAdvantage } = getMaterialInfo(chess));
         room.materialInfo = {
@@ -84,11 +89,60 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
             materialAdvantage
         };
 
-        socket.emit("botGameEval", gameEval1);
+        let isCheck = chess.inCheck();
+        let gameEnded = false;
+        let message = "";
+
+        if (chess.isCheckmate()) {
+            room.status = "checkmate";
+            gameEnded = true;
+        } else if (chess.isStalemate()) {
+            room.status = "stalemate";
+            gameEnded = true;
+        } else if (chess.isThreefoldRepetition()) {
+            room.status = "draw";
+            message = "by 3-fold move repetition"
+            gameEnded = true;
+        } else if (chess.isDrawByFiftyMoves()) {
+            room.status = "draw";
+            message = "by 50 move rule"
+            gameEnded = true;
+        } else if (chess.isInsufficientMaterial()) {
+            room.status = "draw";
+            message = "by insufficient Checkmating material"
+            gameEnded = true;
+        } else {
+            room.status = "ongoing";
+        }
+
+        await client.set(`BOT:${roomId}`, JSON.stringify(room));
         socket.emit("botMaterialInfo", room.materialInfo);
 
-        const { from, to, promotion } = await getBestMove(fen);
+        const gameEval1 = await evaluateFEN(fen);
+        socket.emit("botGameEval", gameEval1);
 
+        // User reached a result before bot
+        if (gameEnded) {
+            const statusPayload = {
+                status: room.status,
+                message,
+                winner: room.status === "checkmate" ? userId : null
+            };
+
+            socket.emit("botGameEnd", statusPayload);
+            return;
+        }
+
+        // Game not ended before bot move
+        const bot = bots.find(b => b.id === room.bot.id);
+        if (!bot) {
+            socket.emit("botNotFound", "Cannot find Bot");
+            return;
+        }
+        const { from, to, promotion } = await bot.moveFunction(fen)
+
+        chess.reset();
+        chess.load(fen);
         let move;
         if (promotion) {
             move = chess.move({
@@ -123,9 +177,9 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
             materialAdvantage
         };
 
-        const isCheck = chess.inCheck();
-        let gameEnded = false;
-        let message = "";
+        isCheck = chess.inCheck();
+        gameEnded = false;
+        message = "";
 
         if (chess.isCheckmate()) {
             room.status = "checkmate";
@@ -169,7 +223,6 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
         }
 
         const gameEval2 = await evaluateFEN(room.fen);
-
         socket.emit("botGameEval", gameEval2);
     } catch (error) {
         console.error("Error in handleBotPlay:", error);

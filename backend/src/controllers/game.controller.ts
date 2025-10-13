@@ -2,15 +2,12 @@ import { Types } from "mongoose";
 import User from "../models/user.model";
 import client from "../redis/client";
 import { io } from "../socket/socket";
-import { BotGameProps, BotPlayerData, BotRoomData, HandleBotMoveProps, HandleMoveProps, JoinRoomProps, PlayerData, RoomData, SearchState } from "../types";
+import { HandleMoveProps, JoinRoomProps, PlayerData, RoomData, SearchState } from "../types";
 import { Request, Response } from "express";
 import generateRoomId from "../utils/generateRoomId";
 import chess from "../services/chessEngine";
 import evaluateFEN from "../services/stockfishEval";
 import updateElo from "../utils/updateElo";
-import getBestMove from "../services/getBestMove";
-import { Chess } from "chess.js";
-import { time } from "console";
 import getMaterialInfo from "../utils/materialInfo";
 
 const MAX_ELO_DIFF = 100;

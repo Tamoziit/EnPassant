@@ -8,11 +8,11 @@ const BotResultModal = ({ botRoomData, status, winner, message, setShowModal }: 
 	const player = botRoomData.user;
 
 	const bot = {
-		userId: "BOT",
-		username: "Sorcerer Supreme",
-		elo: 3000,
+		userId: botRoomData.bot.id,
+		username: botRoomData.bot.name,
+		elo: botRoomData.bot.elo,
 		nationality: "UN",
-		color: player.color === "w" ? "b" : "w",
+		color: botRoomData.bot.color,
 	};
 
 	let resultText = "";

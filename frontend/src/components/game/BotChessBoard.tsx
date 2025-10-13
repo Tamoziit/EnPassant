@@ -6,7 +6,7 @@ import { Chessboard, type PieceDataType } from "react-chessboard";
 import toast from "react-hot-toast";
 import Opening from "./Opening";
 import PlayerCard from "../PlayerCard";
-import BotCard from "../BotCard";
+import BotCard from "../BotDisplayCard";
 import BotResultModal from "./BotResultModal";
 
 const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser }: BotChessBoardProps) => {
@@ -182,7 +182,7 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 	return (
 		<div className="flex w-2/3 lg:w-[500px] flex-col gap-1">
 			<div className="flex flex-col w-full items-center justify-center rounded-lg overflow-hidden">
-				<BotCard materialInfo={materialInfo} color={botRoomData.user.color === "w" ? "b" : "w"} />
+				<BotCard {...botRoomData.bot} materialInfo={materialInfo} color={botRoomData.bot.color} />
 
 				<div className="aspect-square">
 					<Chessboard

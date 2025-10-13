@@ -122,6 +122,18 @@ export interface PlayerCardProps {
     materialInfo: MaterialInfo;
 }
 
+export interface Bot {
+    id: string;
+    name: string;
+    elo: number;
+    image: string;
+};
+
+export interface BotDisplayCardProps {
+    bot: Bot;
+    handleStartBotGame: () => void;
+}
+
 export interface BotChessBoardProps {
     botRoomData: BotRoomData;
     moves: string[];
@@ -177,6 +189,14 @@ export interface CloudinarySignature {
     api_key: string;
 }
 
+export interface BotData {
+    id: string;
+    name: string;
+    elo: number;
+    image: string;
+    color: "w" | "b";
+}
+
 export interface BotPlayerData {
     userId: string;
     username: string;
@@ -190,6 +210,7 @@ export interface BotPlayerData {
 export interface BotRoomData {
     roomId: string;
     user: BotPlayerData;
+    bot: BotData;
     fen: string;
     moves: string[];
     status: "ongoing" | "checkmate" | "draw" | "stalemate";
@@ -197,6 +218,9 @@ export interface BotRoomData {
 }
 
 export interface BotCardProps {
+    name: string;
+    elo: number;
+    image: string;
     materialInfo: MaterialInfo;
     color: "b" | "w";
 }

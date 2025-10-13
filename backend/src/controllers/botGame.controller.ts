@@ -2,11 +2,12 @@ import { Request, Response } from "express";
 import { Chess } from "chess.js";
 import User from "../models/user.model";
 import client from "../redis/client";
-import { BotGameProps, BotPlayerData, BotRoomData, HandleBotMoveProps } from "../types";
+import { BotGameProps, BotPlayerData, BotResult, BotRoomData, HandleBotMoveProps } from "../types";
 import generateRoomId from "../utils/generateRoomId";
 import evaluateFEN from "../services/stockfishEval";
 import getMaterialInfo from "../utils/materialInfo";
 import { bots } from "../data/bots";
+import getResult from "../utils/getResult";
 
 export const handlePlayBot = async ({ botObj, userId, socket }: BotGameProps) => {
     try {
@@ -92,28 +93,12 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
         let isCheck = chess.inCheck();
         let gameEnded = false;
         let message = "";
+        let result;
 
-        if (chess.isCheckmate()) {
-            room.status = "checkmate";
-            gameEnded = true;
-        } else if (chess.isStalemate()) {
-            room.status = "stalemate";
-            gameEnded = true;
-        } else if (chess.isThreefoldRepetition()) {
-            room.status = "draw";
-            message = "by 3-fold move repetition"
-            gameEnded = true;
-        } else if (chess.isDrawByFiftyMoves()) {
-            room.status = "draw";
-            message = "by 50 move rule"
-            gameEnded = true;
-        } else if (chess.isInsufficientMaterial()) {
-            room.status = "draw";
-            message = "by insufficient Checkmating material"
-            gameEnded = true;
-        } else {
-            room.status = "ongoing";
-        }
+        result = getResult(chess) as BotResult;
+        room.status = result.status;
+        gameEnded = result.gameEnded;
+        message = result.message;
 
         await client.set(`BOT:${roomId}`, JSON.stringify(room));
         socket.emit("botMaterialInfo", room.materialInfo);
@@ -178,30 +163,10 @@ export const handleBotMove = async ({ roomId, userId, fen, moves, socket }: Hand
         };
 
         isCheck = chess.inCheck();
-        gameEnded = false;
-        message = "";
-
-        if (chess.isCheckmate()) {
-            room.status = "checkmate";
-            gameEnded = true;
-        } else if (chess.isStalemate()) {
-            room.status = "stalemate";
-            gameEnded = true;
-        } else if (chess.isThreefoldRepetition()) {
-            room.status = "draw";
-            message = "by 3-fold move repetition"
-            gameEnded = true;
-        } else if (chess.isDrawByFiftyMoves()) {
-            room.status = "draw";
-            message = "by 50 move rule"
-            gameEnded = true;
-        } else if (chess.isInsufficientMaterial()) {
-            room.status = "draw";
-            message = "by insufficient Checkmating material"
-            gameEnded = true;
-        } else {
-            room.status = "ongoing";
-        }
+        result = getResult(chess) as BotResult;
+        room.status = result.status;
+        gameEnded = result.gameEnded;
+        message = result.message;
 
         await client.set(`BOT:${roomId}`, JSON.stringify(room));
 

@@ -165,3 +165,9 @@ export interface BotRoomData {
     status: "ongoing" | "checkmate" | "draw" | "stalemate";
     materialInfo: MaterialInfo
 }
+
+export interface BotResult {
+    status: "ongoing" | "checkmate" | "draw" | "stalemate";
+    gameEnded: boolean;
+    message: string;
+}

@@ -2,13 +2,14 @@ import { Types } from "mongoose";
 import User from "../models/user.model";
 import client from "../redis/client";
 import { io } from "../socket/socket";
-import { HandleMoveProps, JoinRoomProps, PlayerData, RoomData, SearchState } from "../types";
+import { BotResult, HandleMoveProps, JoinRoomProps, PlayerData, RoomData, SearchState } from "../types";
 import { Request, Response } from "express";
 import generateRoomId from "../utils/generateRoomId";
 import chess from "../services/chessEngine";
 import evaluateFEN from "../services/stockfishEval";
 import updateElo from "../utils/updateElo";
 import getMaterialInfo from "../utils/materialInfo";
+import getResult from "../utils/getResult";
 
 const MAX_ELO_DIFF = 100;
 const MAX_WAIT_TIME_MS = 30000;
@@ -339,27 +340,10 @@ export const handleMove = async ({ roomId, userId, fen, move, socket }: HandleMo
 		let gameEnded = false;
 		let message = "";
 
-		if (chess.isCheckmate()) {
-			room.status = "checkmate";
-			gameEnded = true;
-		} else if (chess.isStalemate()) {
-			room.status = "stalemate";
-			gameEnded = true;
-		} else if (chess.isThreefoldRepetition()) {
-			room.status = "draw";
-			message = "by 3-fold move repetition"
-			gameEnded = true;
-		} else if (chess.isDrawByFiftyMoves()) {
-			room.status = "draw";
-			message = "by 50 move rule"
-			gameEnded = true;
-		} else if (chess.isInsufficientMaterial()) {
-			room.status = "draw";
-			message = "by insufficient Checkmating material"
-			gameEnded = true;
-		} else {
-			room.status = "ongoing";
-		}
+		const result = getResult(chess) as BotResult;
+		room.status = result.status;
+		gameEnded = result.gameEnded;
+		message = result.message;
 
 		await client.set(`ROOM:${roomId}`, JSON.stringify(room));
 

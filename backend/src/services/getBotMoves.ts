@@ -9,7 +9,6 @@ type BotMoveResult = {
 
 export const getBot1Move = (fen: string): Promise<BotMoveResult> => {
   return new Promise((resolve, reject) => {
-    console.log("Bot1 Responding");
     const enginePath = path.resolve(
       __dirname,
       "../engine/stockfish-windows-x86-64-avx2.exe"
@@ -76,7 +75,6 @@ export const getBot1Move = (fen: string): Promise<BotMoveResult> => {
 
 export const getBot2Move = (fen: string): Promise<BotMoveResult> => {
   return new Promise((resolve, reject) => {
-    console.log("Bot2 Responding");
     const enginePath = path.resolve(
       __dirname,
       "../engine/stockfish-windows-x86-64-avx2.exe"
@@ -143,7 +141,6 @@ export const getBot2Move = (fen: string): Promise<BotMoveResult> => {
 
 export const getBot3Move = (fen: string): Promise<BotMoveResult> => {
   return new Promise((resolve, reject) => {
-    console.log("Bot3 Responding");
     const enginePath = path.resolve(
       __dirname,
       "../engine/stockfish-windows-x86-64-avx2.exe"
@@ -210,7 +207,6 @@ export const getBot3Move = (fen: string): Promise<BotMoveResult> => {
 
 export const getBot4Move = (fen: string): Promise<BotMoveResult> => {
   return new Promise((resolve, reject) => {
-    console.log("Bot4 Responding");
     const enginePath = path.resolve(
       __dirname,
       "../engine/stockfish-windows-x86-64-avx2.exe"
@@ -303,7 +299,6 @@ export const getBot4Move = (fen: string): Promise<BotMoveResult> => {
 
 export const getBot5Move = (fen: string): Promise<BotMoveResult> => {
   return new Promise((resolve, reject) => {
-    console.log("Bot5 Responding");
     const enginePath = path.resolve(
       __dirname,
       "../engine/stockfish-windows-x86-64-avx2.exe"

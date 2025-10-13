@@ -20,7 +20,7 @@ export const bots = [
     {
         id: "EP:BOT-4",
         name: "Vision",
-        elo: 1009,
+        elo: 430,
         image: "/bots/Bot4.png"
     },
     {

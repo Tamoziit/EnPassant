@@ -13,7 +13,7 @@ const ResultModal = ({ roomData, status, winner, message, setShowModal }: Result
 
 	let leftPlayer, rightPlayer, leftColor;
 
-	if (status === "checkmate" || status === "timeout" && winner) {
+	if (status === "checkmate" || status === "timeout" || status === "resignation" && winner) {
 		const winningPlayer = player1.userId === winner ? player1 : player2;
 		const losingPlayer = player1.userId === winner ? player2 : player1;
 		leftPlayer = winningPlayer;
@@ -42,6 +42,12 @@ const ResultModal = ({ roomData, status, winner, message, setShowModal }: Result
 				{status === "timeout" && (
 					<h1 className="text-3xl font-semibold text-center text-gray-300 mt-3">
 						<span className="uppercase">{leftColor}</span> Won by Timeout!
+					</h1>
+				)}
+
+				{status === "resignation" && (
+					<h1 className="text-3xl font-semibold text-center text-gray-300 mt-3">
+						<span className="uppercase">{leftColor}</span> Won by Resignation!
 					</h1>
 				)}
 

@@ -24,6 +24,12 @@ const BotResultModal = ({ botRoomData, status, winner, message, setShowModal }: 
 		rightPlayer = humanWon ? bot : player;
 		const winnerColor = leftPlayer.color === "w" ? "White" : "Black";
 		resultText = `${winnerColor} Won by Checkmate!`;
+	} else if (status === "resignation") {
+		const humanWon = winner === player.userId;
+		leftPlayer = humanWon ? player : bot;
+		rightPlayer = humanWon ? bot : player;
+		const winnerColor = leftPlayer.color === "w" ? "White" : "Black";
+		resultText = `${winnerColor} Won by Resignation!`;
 	} else if (status === "draw") {
 		leftPlayer = player;
 		rightPlayer = bot;

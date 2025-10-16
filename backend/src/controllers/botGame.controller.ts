@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { Chess } from "chess.js";
 import User from "../models/user.model";
 import client from "../redis/client";
-import { BotGameProps, BotPlayerData, BotResult, BotRoomData, HandleBotMoveProps } from "../types";
+import { BotGameProps, BotPlayerData, BotResult, BotRoomData, HandleBotMoveProps, ResignProps } from "../types";
 import generateRoomId from "../utils/generateRoomId";
 import evaluateFEN from "../services/stockfishEval";
 import getMaterialInfo from "../utils/materialInfo";
@@ -209,5 +209,37 @@ export const getBotRoomData = async (req: Request, res: Response) => {
     } catch (error) {
         console.log("Error in getBotRoomData controller", error);
         res.status(500).json({ error: "Internal Server Error" });
+    }
+}
+
+export const handleBotGameResign = async ({ roomId, userId, socket }: ResignProps) => {
+    try {
+        console.log("Inside resignation")
+        const data = await client.get(`BOT:${roomId}`);
+
+        if (!data) {
+            socket.emit("botRoomNotFound", "Cannot find Room data");
+            return;
+        }
+
+        const room = JSON.parse(data) as BotRoomData;
+
+        if (room.status !== "ongoing") {
+            return;
+        }
+
+        room.status = "resignation";
+        await client.set(`BOT:${roomId}`, JSON.stringify(room));
+
+        const statusPayload = {
+            status: "resignation",
+            message: "Won by Resignation",
+            winner: room.status === "resignation" ? null : userId
+        };
+
+        socket.emit("botGameEnd", statusPayload);
+    } catch (error) {
+        console.error("Error in handleResign:", error);
+        socket.emit("error", "Server error while handling resign.");
     }
 }

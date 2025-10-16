@@ -8,6 +8,7 @@ import Opening from "./Opening";
 import PlayerCard from "../PlayerCard";
 import BotCard from "../BotDisplayCard";
 import BotResultModal from "./BotResultModal";
+import { audioManager } from "@/utils/audioManager";
 
 const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser }: BotChessBoardProps) => {
 	const chessRef = useRef(new Chess());
@@ -61,6 +62,8 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 				moves: newMoves
 			});
 
+			audioManager.playMove();
+
 			return true;
 		} catch (error) {
 			return false;
@@ -94,6 +97,8 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 						},
 					});
 				}
+
+				audioManager.playMove();
 			} catch (err) {
 				console.error("Invalid FEN received:", opponentFen);
 			}

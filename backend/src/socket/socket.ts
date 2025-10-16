@@ -2,9 +2,9 @@ import { Server } from "socket.io";
 import http from "http";
 import express from "express";
 import client from "../redis/client";
-import { cancelSearch, cleanupStates, handleMove, joinRoom } from "../controllers/game.controller";
+import { cancelSearch, cleanupStates, handleDrawOffer, handleDrawResolution, handleMove, handleResign, joinRoom } from "../controllers/game.controller";
 import User from "../models/user.model";
-import { handleBotMove, handlePlayBot } from "../controllers/botGame.controller";
+import { handleBotGameResign, handleBotMove, handlePlayBot } from "../controllers/botGame.controller";
 
 const baseUrl = process.env.BASE_URL!;
 const app = express();
@@ -58,6 +58,31 @@ io.on("connection", async (socket) => {
         });
     });
 
+    socket.on("resign", (data) => {
+        handleResign({
+            roomId: data.roomId,
+            userId: data.userId,
+            socket: socket
+        });
+    });
+
+    socket.on("offerDraw", (data) => {
+        handleDrawOffer({
+            roomId: data.roomId,
+            userId: data.userId,
+            socket: socket
+        });
+    });
+
+    socket.on("drawResolution", (data) => {
+        handleDrawResolution({
+            roomId: data.roomId,
+            userId: data.userId,
+            accepted: data.accepted,
+            socket: socket
+        });
+    });
+
     socket.on("playBot", (data) => {
         handlePlayBot({
             botObj: data.botObj,
@@ -72,6 +97,14 @@ io.on("connection", async (socket) => {
             userId: data.userId,
             fen: data.fen,
             moves: data.moves,
+            socket: socket
+        });
+    });
+
+    socket.on("botGameResign", (data) => {
+        handleBotGameResign({
+            roomId: data.roomId,
+            userId: data.userId,
             socket: socket
         });
     });

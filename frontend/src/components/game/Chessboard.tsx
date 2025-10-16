@@ -8,6 +8,7 @@ import ResultModal from "./ResultModal";
 import getOpeningByFEN from "@/utils/getOpeningByFEN";
 import Opening from "./Opening";
 import Timer from "./Timer";
+import { audioManager } from "@/utils/audioManager";
 
 const ChessBoard = ({ roomData, setMoves, socket, authUser }: ChessBoardProps) => {
 	const chessRef = useRef(new Chess());
@@ -68,6 +69,8 @@ const ChessBoard = ({ roomData, setMoves, socket, authUser }: ChessBoardProps) =
 				move: moveNotation
 			});
 
+			audioManager.playMove();
+
 			return true;
 		} catch {
 			return false;
@@ -103,6 +106,8 @@ const ChessBoard = ({ roomData, setMoves, socket, authUser }: ChessBoardProps) =
 						},
 					});
 				}
+
+				audioManager.playMove();
 			} catch (err) {
 				console.error("Invalid FEN received:", opponentFen);
 			}
@@ -115,7 +120,7 @@ const ChessBoard = ({ roomData, setMoves, socket, authUser }: ChessBoardProps) =
 			socket.off("handleMove", handleOpponentMove);
 		};
 	}, [roomData, authUser, socket]);
-	
+
 	// Material Info
 	useEffect(() => {
 		if (!socket) return;

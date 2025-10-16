@@ -89,7 +89,7 @@ export interface RoomData {
     player2: PlayerData;
     fen: string;
     moves: string[];
-    status: "ongoing" | "checkmate" | "draw" | "stalemate" | "timeout";
+    status: "ongoing" | "checkmate" | "draw" | "stalemate" | "timeout" | "resignation";
     timeControl: {
         initial: number;
         increment: number;
@@ -162,12 +162,31 @@ export interface BotRoomData {
     user: BotPlayerData;
     fen: string;
     moves: string[];
-    status: "ongoing" | "checkmate" | "draw" | "stalemate";
+    status: "ongoing" | "checkmate" | "draw" | "stalemate" | "resignation";
     materialInfo: MaterialInfo
 }
 
 export interface BotResult {
-    status: "ongoing" | "checkmate" | "draw" | "stalemate";
+    status: "ongoing" | "checkmate" | "draw" | "stalemate" | "resignation";
     gameEnded: boolean;
     message: string;
+}
+
+export interface ResignProps {
+    roomId: string;
+    userId: string;
+    socket: Socket;
+}
+
+export interface DrawProps {
+    roomId: string;
+    userId: string;
+    socket: Socket;
+}
+
+export interface DrawResolutionProps {
+    roomId: string;
+    userId: string;
+    accepted: boolean;
+    socket: Socket;
 }

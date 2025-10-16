@@ -11,6 +11,7 @@ import useGetBotRoomData from "@/hooks/useGetBotRoomData";
 import type { BotRoomData, Eval } from "@/types";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { FaFlag } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 
 const BotGame = () => {
@@ -41,6 +42,17 @@ const BotGame = () => {
 			toast.error("Room ID not found.");
 		}
 	};
+
+	const handleResign = async () => {
+		if (!socket || !botRoomData) {
+			return;
+		}
+
+		socket.emit("botGameResign", {
+			roomId: botRoomData.roomId,
+			userId: authUser?._id
+		});
+	}
 
 	useEffect(() => {
 		fetchRoomData();
@@ -99,6 +111,15 @@ const BotGame = () => {
 					<MoveHistory
 						moves={moves}
 					/>
+				</div>
+
+				<div className="w-full flex gap-2 items-center justify-end px-10">
+					<button
+						className="bg-transparent border-none outline-none cursor-pointer text-gray-400 hover:text-gray-300"
+						onClick={handleResign}
+					>
+						<FaFlag className="text-xl" />
+					</button>
 				</div>
 			</div>
 		</>

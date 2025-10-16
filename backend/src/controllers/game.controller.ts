@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import User from "../models/user.model";
 import client from "../redis/client";
 import { io } from "../socket/socket";
-import { BotResult, HandleMoveProps, JoinRoomProps, PlayerData, RoomData, SearchState } from "../types";
+import { BotResult, DrawProps, DrawResolutionProps, HandleMoveProps, JoinRoomProps, PlayerData, ResignProps, RoomData, SearchState } from "../types";
 import { Request, Response } from "express";
 import generateRoomId from "../utils/generateRoomId";
 import chess from "../services/chessEngine";
@@ -506,6 +506,156 @@ export const checkRoomTimeout = async (roomId: string) => {
 		console.log(`Error checking timeout for room ${roomId}:`, error);
 	}
 };
+
+export const handleResign = async ({ roomId, userId, socket }: ResignProps) => {
+	try {
+		const data = await client.get(`ROOM:${roomId}`);
+
+		if (!data) {
+			socket.emit("roomNotFound", "Cannot find Room data");
+			return;
+		}
+
+		const room = JSON.parse(data) as RoomData;
+
+		if (room.status !== "ongoing") {
+			await client.srem("ACTIVE_GAMES", roomId);
+			return;
+		}
+
+		const resigningPlayer = room.player1.userId === userId ? room.player1 : room.player2;
+		const opponentPlayer = room.player1.userId === userId ? room.player2 : room.player1;
+		const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
+
+		room.status = "resignation";
+		await client.set(`ROOM:${roomId}`, JSON.stringify(room));
+
+		await client.srem("ACTIVE_GAMES", roomId);
+
+		const statusPayload = {
+			status: "resignation",
+			message: "Won by Resignation",
+			winner: opponentPlayer.userId
+		};
+
+		if (opponentSocketId) {
+			io.to(opponentSocketId).emit("gameEnd", statusPayload);
+		}
+		socket.emit("gameEnd", statusPayload);
+
+		const { newRatingA, newRatingB } = updateElo(
+			opponentPlayer.elo,
+			resigningPlayer.elo,
+			1,
+			32
+		);
+
+		await Promise.all([
+			User.updateOne(
+				{ _id: opponentPlayer.userId },
+				{
+					$inc: { "gameStats.won": 1 },
+					$set: { elo: Math.round(newRatingA) }
+				}
+			),
+			User.updateOne(
+				{ _id: resigningPlayer.userId },
+				{
+					$inc: { "gameStats.lost": 1 },
+					$set: { elo: Math.round(newRatingB) }
+				}
+			)
+		]);
+	} catch (error) {
+		console.error("Error in handleResign:", error);
+		socket.emit("error", "Server error while handling resign.");
+	}
+}
+
+export const handleDrawOffer = async ({ roomId, userId, socket }: DrawProps) => {
+	try {
+		console.log("Draw Offered")
+		const data = await client.get(`ROOM:${roomId}`);
+
+		if (!data) {
+			socket.emit("roomNotFound", "Cannot find Room data");
+			return;
+		}
+
+		const room = JSON.parse(data) as RoomData;
+
+		if (room.status !== "ongoing") {
+			await client.srem("ACTIVE_GAMES", roomId);
+			return;
+		}
+
+		const opponentPlayer = room.player1.userId === userId ? room.player2 : room.player1;
+		const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
+
+		if (opponentSocketId) {
+			io.to(opponentSocketId).emit("drawOffered", userId);
+		}
+	} catch (error) {
+		console.error("Error in handleDrawOffer:", error);
+		socket.emit("error", "Server error while handling resign.");
+	}
+}
+
+export const handleDrawResolution = async ({ roomId, userId, accepted, socket }: DrawResolutionProps) => {
+	try {
+		const data = await client.get(`ROOM:${roomId}`);
+
+		if (!data) {
+			socket.emit("roomNotFound", "Cannot find Room data");
+			return;
+		}
+
+		const room = JSON.parse(data) as RoomData;
+
+		if (room.status !== "ongoing") {
+			await client.srem("ACTIVE_GAMES", roomId);
+			return;
+		}
+
+		const currentPlayer = room.player1.userId === userId ? room.player1 : room.player2;
+		const opponentPlayer = room.player1.userId === userId ? room.player2 : room.player1;
+		const opponentSocketId = await client.hget("player_sockets", opponentPlayer.userId);
+
+		if (accepted) {
+			room.status = "draw";
+			await client.set(`ROOM:${roomId}`, JSON.stringify(room));
+
+			await client.srem("ACTIVE_GAMES", roomId);
+
+			const statusPayload = {
+				status: "draw",
+				message: "by Mutual Agreement",
+				winner: opponentPlayer.userId
+			};
+
+			if (opponentSocketId) {
+				io.to(opponentSocketId).emit("gameEnd", statusPayload);
+			}
+			socket.emit("gameEnd", statusPayload);
+
+			await Promise.all([
+				User.updateOne(
+					{ _id: currentPlayer.userId }, {
+					$inc: { "gameStats.draw": 1 },
+				}),
+				User.updateOne(
+					{ _id: opponentPlayer.userId }, {
+					$inc: { "gameStats.draw": 1 },
+				})
+			]);
+		} else {
+			return;
+		}
+	} catch (error) {
+		console.error("Error in handleDrawOffer:", error);
+		socket.emit("error", "Server error while handling resign.");
+	}
+}
 
 export const cleanupStates = async (userId: Types.ObjectId): Promise<void> => {
 	try {

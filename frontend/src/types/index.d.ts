@@ -79,7 +79,7 @@ export interface RoomData {
     player2: PlayerData;
     fen: string;
     moves: string[];
-    status: "ongoing" | "checkmate" | "draw" | "stalemate" | "timeout";
+    status: "ongoing" | "checkmate" | "draw" | "stalemate" | "timeout" | "resignation";
     timeControl: {
         initial: number;
         increment: number;
@@ -144,7 +144,7 @@ export interface BotChessBoardProps {
 }
 
 export interface ResultProps {
-    status: "checkmate" | "draw" | "stalemate" | "timeout" | null;
+    status: "checkmate" | "draw" | "stalemate" | "timeout" | "resignation" | null;
     winner: string | null;
     message: string;
 }
@@ -163,7 +163,7 @@ export interface EvalBarProps {
 
 export interface ResultModalProps {
     roomData: RoomData;
-    status: "checkmate" | "draw" | "stalemate" | "timeout" | null;
+    status: "checkmate" | "draw" | "stalemate" | "timeout" | "resignation" | null;
     winner: string | null;
     message: string;
     setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -213,7 +213,7 @@ export interface BotRoomData {
     bot: BotData;
     fen: string;
     moves: string[];
-    status: "ongoing" | "checkmate" | "draw" | "stalemate";
+    status: "ongoing" | "checkmate" | "draw" | "stalemate" | "resignation";
     materialInfo: MaterialInfo;
 }
 
@@ -226,14 +226,14 @@ export interface BotCardProps {
 }
 
 export interface BotResultProps {
-    status: "checkmate" | "draw" | "stalemate" | null;
+    status: "checkmate" | "draw" | "stalemate" | "resignation" | null;
     winner: string | null;
     message: string;
 }
 
 interface BotResultModalProps {
     botRoomData: BotRoomData;
-    status: "checkmate" | "draw" | "stalemate" | null;
+    status: "checkmate" | "draw" | "stalemate" | "resignation" | null;
     winner: string | null;
     message?: string;
     setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -244,5 +244,10 @@ export interface TimerProps {
     isActive: boolean;
     serverTime?: number;
     lastMoveTimestamp?: number;
-    status: "checkmate" | "draw" | "stalemate" | "timeout" | null;
+    status: "checkmate" | "draw" | "stalemate" | "timeout" | "resignation" | null;
+}
+
+export interface DrawModalProps {
+	onAccept: () => void;
+	onDecline: () => void;
 }

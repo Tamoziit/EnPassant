@@ -9,6 +9,7 @@ import getOpeningByFEN from "@/utils/getOpeningByFEN";
 import Opening from "./Opening";
 import Timer from "./Timer";
 import { audioManager } from "@/utils/audioManager";
+import playMusic from "@/utils/playMusic";
 
 const ChessBoard = ({ roomData, setMoves, socket, authUser }: ChessBoardProps) => {
 	const chessRef = useRef(new Chess());
@@ -69,8 +70,7 @@ const ChessBoard = ({ roomData, setMoves, socket, authUser }: ChessBoardProps) =
 				move: moveNotation
 			});
 
-			audioManager.playMove();
-
+			playMusic(moveNotation);
 			return true;
 		} catch {
 			return false;
@@ -107,7 +107,7 @@ const ChessBoard = ({ roomData, setMoves, socket, authUser }: ChessBoardProps) =
 					});
 				}
 
-				audioManager.playMove();
+				playMusic(moves[moves.length - 1]);
 			} catch (err) {
 				console.error("Invalid FEN received:", opponentFen);
 			}
@@ -169,10 +169,12 @@ const ChessBoard = ({ roomData, setMoves, socket, authUser }: ChessBoardProps) =
 
 		const winByAbandonment = (msg: string) => {
 			toast.success(msg || "Opponent Disconnect, You win by Abandonment!");
+			audioManager.playGameOver();
 		};
 
 		const gameResult = ({ status, winner, message }: ResultProps) => {
 			setResult({ status, winner, message });
+			audioManager.playGameOver();
 			setShowModal(true);
 		}
 

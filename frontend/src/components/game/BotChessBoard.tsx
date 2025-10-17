@@ -9,6 +9,7 @@ import PlayerCard from "../PlayerCard";
 import BotCard from "../BotDisplayCard";
 import BotResultModal from "./BotResultModal";
 import { audioManager } from "@/utils/audioManager";
+import playMusic from "@/utils/playMusic";
 
 const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser }: BotChessBoardProps) => {
 	const chessRef = useRef(new Chess());
@@ -62,8 +63,7 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 				moves: newMoves
 			});
 
-			audioManager.playMove();
-
+			playMusic(moveNotation);
 			return true;
 		} catch (error) {
 			return false;
@@ -98,7 +98,7 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 					});
 				}
 
-				audioManager.playMove();
+				playMusic(moves[moves.length - 1]);
 			} catch (err) {
 				console.error("Invalid FEN received:", opponentFen);
 			}
@@ -116,7 +116,6 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 		if (!socket || !botRoomData || !authUser) return;
 
 		if (botRoomData.user.color === "b") {
-			console.log("User is Black — requesting bot to play first move");
 			socket.emit("handlePlayerMove", {
 				roomId: botRoomData.roomId,
 				userId: authUser._id,
@@ -174,6 +173,7 @@ const BotChessBoard = ({ botRoomData, moves, setMoves, colour, socket, authUser 
 
 		const gameResult = ({ status, winner, message }: BotResultProps) => {
 			setResult({ status, winner, message });
+			audioManager.playGameOver();
 			setShowModal(true);
 		}
 

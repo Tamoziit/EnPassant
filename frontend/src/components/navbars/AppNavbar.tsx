@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaHome, FaUserAlt } from "react-icons/fa";
 import { MdLogout } from "react-icons/md";
 import useLogout from "../../hooks/useLogout";
+import { Link } from "react-router-dom";
 
 const AppNavbar = () => {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -64,13 +65,13 @@ const AppNavbar = () => {
 				{items.map((item, _idx) => (
 					<div className="flex items-center gap-2" key={_idx}>
 						<span>{item.icon}</span>
-						<a
+						<Link
 							key={_idx}
-							href={item.link}
+							to={item.link}
 							className="relative text-lg font-medium text-gray-100 before:absolute before:bottom-0 before:left-0 before:h-[2.3px] before:w-0 before:bg-blue-300 before:transition-all before:duration-300 hover:before:w-full"
 						>
 							{item.name}
-						</a>
+						</Link>
 					</div>
 				))}
 
@@ -90,13 +91,13 @@ const AppNavbar = () => {
 						{items.map((item, _idx) => (
 							<li key={_idx} className="flex items-center gap-2 z-20">
 								<span>{item.icon}</span>
-								<a
-									href={item.link}
+								<Link
+									to={item.link}
 									className="relative text-lg font-medium text-gray-100 before:absolute before:bottom-0 before:left-0 before:h-[2.3px] before:w-0 before:bg-blue-300 before:transition-all before:duration-300 hover:before:w-full"
 									onClick={() => setIsMenuOpen(false)}
 								>
 									{item.name}
-								</a>
+								</Link>
 							</li>
 						))}
 

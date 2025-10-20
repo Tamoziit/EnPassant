@@ -9,6 +9,7 @@ import useGetRecords from "@/hooks/useGetRecords";
 import toast from "react-hot-toast";
 import Spinner from "@/components/Spinner";
 import Records from "@/components/Records";
+import { motion } from "framer-motion";
 
 const Home = () => {
 	const { authUser } = useAuthContext();
@@ -34,11 +35,21 @@ const Home = () => {
 			<AppNavbar />
 
 			<div className="flex flex-col md:flex-row items-center justify-around px-10 lg:px-16 pt-22 gap-6">
-				<div className="flex w-full md:w-1/2 lg:w-2/3">
+				<motion.div
+					className="flex w-full md:w-1/2 lg:w-2/3"
+					initial={{ x: -150, opacity: 0 }}
+					animate={{ x: 0, opacity: 1 }}
+					transition={{ type: "spring", stiffness: 80, damping: 20 }}
+				>
 					<HeroModel />
-				</div>
+				</motion.div>
 
-				<div className="flex flex-col items-center md:items-end gap-1 w-full md:w-1/2 lg:w-1/3">
+				<motion.div
+					className="flex flex-col items-center md:items-end gap-1 w-full md:w-1/2 lg:w-1/3"
+					initial={{ x: 150, opacity: 0 }}
+					animate={{ x: 0, opacity: 1 }}
+					transition={{ type: "spring", stiffness: 80, damping: 20, delay: 0.2 }}
+				>
 					<h1 className="text-gray-200 text-4xl lg:text-6xl font-semibold text-center md:text-right">
 						Welcome
 					</h1>
@@ -65,7 +76,7 @@ const Home = () => {
 							Play a Bot
 						</Button>
 					</div>
-				</div>
+				</motion.div>
 			</div>
 
 			<div className="flex w-full px-6 lg:px-16 mt-16 pb-10">

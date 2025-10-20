@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { FaListAlt, FaPhoneAlt } from "react-icons/fa";
-import { VscWorkspaceTrusted } from "react-icons/vsc";
 import { MdOutlineLogin } from "react-icons/md";
 
 const LandingNavbar = () => {
@@ -11,11 +10,6 @@ const LandingNavbar = () => {
 			name: "About",
 			icon: <FaListAlt />,
 			link: "#about",
-		},
-		{
-			name: "Services",
-			icon: <VscWorkspaceTrusted />,
-			link: "#services",
 		},
 		{
 			name: "Contact",

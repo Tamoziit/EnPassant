@@ -11,6 +11,7 @@ import GameRoom from "./pages/game/GameRoom";
 import Game from "./pages/game/Game";
 import BotGame from "./pages/bot/BotGame";
 import PlayBots from "./pages/bot/PlayBots";
+import BackgroundMusic from "./components/BackgroundMusic";
 
 function App() {
 	const { authUser } = useAuthContext();
@@ -18,6 +19,7 @@ function App() {
 	return (
 		<>
 			<div className="min-h-screen bg-gradient-to-br from-slate-800 to-black">
+				<BackgroundMusic />
 
 				<Routes>
 					<Route path="/" element={authUser ? <Navigate to="/home" /> : <Landing />} />
